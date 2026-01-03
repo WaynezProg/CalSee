@@ -1,0 +1,148 @@
+{
+  "meta": {
+    "title": "CalSee - 飲食記錄",
+    "description": "拍照記錄飲食，AI 智能辨識食物與營養資訊"
+  },
+  "app": {
+    "name": "CalSee"
+  },
+  "nav": {
+    "history": "飲食記錄",
+    "newEntry": "新增記錄",
+    "viewHistory": "查看記錄",
+    "backHome": "返回首頁"
+  },
+  "home": {
+    "logMealTitle": "記錄飲食",
+    "logMealSubtitle": "拍攝或選擇食物照片",
+    "processingTitle": "辨識食物中...",
+    "processingNotice": "照片將上傳進行辨識",
+    "confirmTitle": "確認飲食資訊",
+    "photoAlt": "食物照片",
+    "successTitle": "儲存成功",
+    "successSubtitle": "飲食記錄已儲存",
+    "newMeal": "記錄新的飲食",
+    "viewHistory": "查看記錄"
+  },
+  "errors": {
+    "consentRequired": "需要同意雲端辨識才能使用此功能",
+    "invalidImage": "無效的圖片格式",
+    "recognitionUnavailable": "辨識服務暫時無法使用",
+    "recognitionFailed": "辨識失敗，請稍後再試",
+    "recognitionFailedManual": "辨識失敗，請手動輸入",
+    "recognitionErrorManual": "辨識過程發生錯誤，請手動輸入",
+    "recognitionParseFailed": "辨識結果解析失敗",
+    "noFoodDetected": "無法辨識圖片中的食物",
+    "recognitionTimeout": "辨識超時，請稍後再試",
+    "consentSaveFailed": "儲存同意狀態失敗",
+    "missingPhoto": "缺少照片資料",
+    "storageLow": "儲存空間不足，請刪除舊的飲食記錄後再試",
+    "storageFull": "儲存空間已滿，請刪除舊的飲食記錄",
+    "saveFailed": "儲存失敗，請稍後再試",
+    "mealLoadFailed": "載入飲食記錄失敗",
+    "mealDeleteFailed": "刪除失敗，請稍後再試",
+    "imageInvalid": "請選擇圖片檔案",
+    "imageTooLarge": "圖片檔案過大，請選擇小於 10MB 的圖片",
+    "imageProcessFailed": "圖片處理失敗，請重試",
+    "networkError": "網路錯誤，請檢查網路連線",
+    "nutritionUnavailable": "營養資料服務暫時無法使用",
+    "nutritionFailed": "營養資料查詢失敗",
+    "nutritionFailedRetry": "營養資料查詢失敗，請稍後再試",
+    "nutritionTimeout": "營養資料查詢超時",
+    "invalidFoodName": "請提供食物名稱",
+    "withdrawConsentFailed": "撤回失敗，請稍後再試",
+    "unexpected": "發生錯誤，請重新整理"
+  },
+  "camera": {
+    "inputLabel": "選擇或拍攝照片",
+    "previewAlt": "食物照片預覽",
+    "clearPhoto": "清除照片",
+    "processing": "處理中...",
+    "cta": "點擊拍照或選擇照片",
+    "supportedFormats": "支援 JPG、PNG 格式"
+  },
+  "mealForm": {
+    "foodNameLabel": "食物名稱",
+    "foodNamePlaceholder": "輸入食物名稱",
+    "recognitionConfidence": "辨識信心度：{percent}%",
+    "lowConfidence": "信心度較低",
+    "alternativesTitle": "其他可能的食物：",
+    "manualEntry": "辨識結果不正確？點此手動輸入",
+    "portionLabel": "份量",
+    "nutritionTitle": "營養資訊",
+    "caloriesLabel": "熱量：",
+    "proteinLabel": "蛋白質：",
+    "carbsLabel": "碳水化合物：",
+    "fatsLabel": "脂肪：",
+    "estimated": "估算值",
+    "dataMissing": "資料不足",
+    "partialNutritionWarning": "部分營養資料無法取得，顯示值僅供參考",
+    "loadingNutrition": "載入營養資訊中...",
+    "cancel": "取消",
+    "save": "儲存",
+    "portionOptions": {
+      "halfValue": "0.5 份",
+      "halfLabel": "半份",
+      "oneValue": "1 份",
+      "oneLabel": "1 份",
+      "oneHalfValue": "1.5 份",
+      "oneHalfLabel": "1.5 份",
+      "twoValue": "2 份",
+      "twoLabel": "2 份",
+      "bowlValue": "1 碗",
+      "bowlLabel": "1 碗",
+      "plateValue": "1 盤",
+      "plateLabel": "1 盤",
+      "cupValue": "1 杯",
+      "cupLabel": "1 杯"
+    }
+  },
+  "mealHistory": {
+    "emptyTitle": "尚無飲食記錄",
+    "emptySubtitle": "開始記錄您的第一餐吧！",
+    "today": "今天 {time}",
+    "yesterday": "昨天 {time}",
+    "caloriesUnit": "kcal"
+  },
+  "mealDetail": {
+    "editTitle": "編輯飲食記錄",
+    "viewTitle": "飲食詳情",
+    "closeLabel": "關閉",
+    "nutritionTitle": "營養資訊",
+    "caloriesLabel": "熱量",
+    "proteinLabel": "蛋白質",
+    "carbsLabel": "碳水化合物",
+    "fatsLabel": "脂肪",
+    "recordedAt": "記錄時間：{time}",
+    "updatedAt": "最後更新：{time}",
+    "confidence": "辨識信心度：{percent}%",
+    "manualEntry": "手動輸入",
+    "edit": "編輯",
+    "delete": "刪除"
+  },
+  "deleteConfirm": {
+    "title": "確認刪除",
+    "message": "確定要刪除「{itemName}」嗎？此操作無法復原。",
+    "cancel": "取消",
+    "confirm": "刪除",
+    "deleting": "刪除中..."
+  },
+  "consent": {
+    "title": "雲端辨識服務同意",
+    "body": "為了辨識您的食物照片，我們需要將照片上傳至雲端 AI 服務進行分析。",
+    "noticeTitle": "照片將上傳進行辨識",
+    "noticeItem1": "照片僅用於食物辨識，不會被儲存於雲端",
+    "noticeItem2": "辨識完成後照片即被刪除",
+    "noticeItem3": "您的飲食記錄僅儲存於您的裝置中",
+    "declineNote": "如果您不同意，仍可使用手動輸入功能記錄飲食。",
+    "version": "同意版本：{version}",
+    "decline": "不同意",
+    "accept": "同意",
+    "processing": "處理中..."
+  },
+  "consentWithdraw": {
+    "label": "撤回雲端辨識同意",
+    "confirm": "確定要撤回雲端辨識同意嗎？",
+    "success": "已撤回同意"
+  }
+}
