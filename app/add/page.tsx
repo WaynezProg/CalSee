@@ -18,6 +18,7 @@ import { v4 as uuidv4 } from 'uuid';
 import AppLayout from '@/app/components/layout/AppLayout';
 import CameraCapture from '@/app/components/camera/CameraCapture';
 import MealForm from '@/app/components/meal/MealForm';
+import { MealForm as SyncMealForm } from '@/app/components/meals/MealForm';
 import ConsentDialog, { CONSENT_VERSION } from '@/app/components/ui/ConsentDialog';
 import { useI18n } from '@/lib/i18n';
 import { recognizeFoodWithRetry } from '@/lib/services/recognition';
@@ -440,6 +441,16 @@ export default function AddMealPage() {
             </div>
           </div>
         )}
+
+        <section className="mt-10 border-t border-slate-200 pt-6">
+          <h2 className="text-lg font-semibold text-slate-800">Sync meal (multi-item)</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Prototype form for multi-item meals with cloud sync.
+          </p>
+          <div className="mt-4">
+            <SyncMealForm />
+          </div>
+        </section>
       </main>
 
       {/* Consent Dialog */}
