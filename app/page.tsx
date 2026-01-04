@@ -64,8 +64,6 @@ function getSyncMealTotals(meal: SyncMeal): MealTotals {
     fats: Number.isFinite(meal.totalFat ?? NaN) ? meal.totalFat ?? 0 : fallback.fats,
   };
 }
-  photoUrl?: string;
-}
 
 interface TodaySummary {
   calories: number;
