@@ -73,24 +73,34 @@ export function MealHistory() {
           }
 
           const signed = await fetchSignedUrl(meal.photoId, "thumbnail");
-          const thumbnailResponse = await fetch(signed.url);
-          if (!thumbnailResponse.ok) {
-            continue;
-          }
-          const blob = await thumbnailResponse.blob();
-          await cacheThumbnail(meal.photoId, blob);
-          const url = URL.createObjectURL(blob);
+          try {
+            const thumbnailResponse = await fetch(signed.url);
+            if (!thumbnailResponse.ok) {
+              throw new Error("thumbnail_fetch_failed");
+            }
+            const blob = await thumbnailResponse.blob();
+            await cacheThumbnail(meal.photoId, blob);
+            const url = URL.createObjectURL(blob);
 
-          if (!isActive) {
-            URL.revokeObjectURL(url);
-            return;
-          }
+            if (!isActive) {
+              URL.revokeObjectURL(url);
+              return;
+            }
 
-          setMeals(prev =>
-            prev.map(item =>
-              item.id === meal.id ? { ...item, thumbnailUrl: url } : item,
-            ),
-          );
+            setMeals(prev =>
+              prev.map(item =>
+                item.id === meal.id ? { ...item, thumbnailUrl: url } : item,
+              ),
+            );
+          } catch {
+            if (!isActive) return;
+            // Fallback to signed URL to avoid CORS/cache issues.
+            setMeals(prev =>
+              prev.map(item =>
+                item.id === meal.id ? { ...item, thumbnailUrl: signed.url } : item,
+              ),
+            );
+          }
         } catch (err) {
           // Ignore thumbnail failures; cached thumbnails will still display.
         }

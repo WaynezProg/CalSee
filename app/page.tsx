@@ -14,9 +14,56 @@ import AppLayout from '@/app/components/layout/AppLayout';
 import AppLogo from '@/app/components/ui/AppLogo';
 import { useI18n } from '@/lib/i18n';
 import { getAllMeals, getPhoto } from '@/lib/db/indexeddb';
-import type { Meal } from '@/types/meal';
+import type { Meal as SyncMeal } from '@/types/sync';
 
-interface MealWithPhoto extends Meal {
+interface MealWithPhoto {
+  id?: string;
+  foodName: string;
+  calories?: number | null;
+  createdAt: Date;
+  photoUrl?: string;
+}
+
+interface MealTotals {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fats: number;
+}
+
+interface MealWithTotals {
+  meal: SyncMeal;
+  totals: MealTotals;
+  createdAt: Date;
+}
+
+interface SignedUrlResponse {
+  url: string;
+  expiresAt: string;
+}
+
+function coerceDate(value: Date | string): Date {
+  return value instanceof Date ? value : new Date(value);
+}
+
+function getSyncMealTotals(meal: SyncMeal): MealTotals {
+  const fallback = meal.items.reduce(
+    (totals, item) => ({
+      calories: totals.calories + (item.calories ?? 0),
+      protein: totals.protein + (item.protein ?? 0),
+      carbs: totals.carbs + (item.carbs ?? 0),
+      fats: totals.fats + (item.fat ?? 0),
+    }),
+    { calories: 0, protein: 0, carbs: 0, fats: 0 },
+  );
+
+  return {
+    calories: Number.isFinite(meal.totalCalories ?? NaN) ? meal.totalCalories ?? 0 : fallback.calories,
+    protein: Number.isFinite(meal.totalProtein ?? NaN) ? meal.totalProtein ?? 0 : fallback.protein,
+    carbs: Number.isFinite(meal.totalCarbs ?? NaN) ? meal.totalCarbs ?? 0 : fallback.carbs,
+    fats: Number.isFinite(meal.totalFat ?? NaN) ? meal.totalFat ?? 0 : fallback.fats,
+  };
+}
   photoUrl?: string;
 }
 
@@ -44,74 +91,161 @@ export default function Home() {
 
   // Load meals on mount
   useEffect(() => {
+    let isActive = true;
+
+    const fetchSignedThumbnail = async (photoId: string) => {
+      const response = await fetch(`/api/sync/photos/signed-url?photoId=${photoId}&type=thumbnail`);
+      if (!response.ok) {
+        return undefined;
+      }
+      const data = (await response.json()) as SignedUrlResponse;
+      return data.url;
+    };
+
+    const loadLocalMeals = async () => {
+      const allMeals = await getAllMeals();
+
+      // Cleanup old URLs
+      photoUrlsRef.current.forEach(url => URL.revokeObjectURL(url));
+      photoUrlsRef.current = [];
+
+      // Calculate today's summary
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const todayMeals = allMeals.filter(meal => {
+        const mealDate = new Date(meal.createdAt);
+        mealDate.setHours(0, 0, 0, 0);
+        return mealDate.getTime() === today.getTime();
+      });
+
+      const summary: TodaySummary = {
+        calories: 0,
+        protein: 0,
+        carbs: 0,
+        fats: 0,
+        mealCount: todayMeals.length,
+      };
+
+      todayMeals.forEach(meal => {
+        summary.calories += meal.calories || 0;
+        summary.protein += meal.protein || 0;
+        summary.carbs += meal.carbohydrates || 0;
+        summary.fats += meal.fats || 0;
+      });
+
+      const recent = allMeals.slice(0, 3);
+      const mealsWithPhotos = await Promise.all(
+        recent.map(async (meal) => {
+          try {
+            const photo = await getPhoto(meal.photoId);
+            const photoUrl = photo ? URL.createObjectURL(photo.blob) : undefined;
+            if (photoUrl) {
+              photoUrlsRef.current.push(photoUrl);
+            }
+            return {
+              id: meal.id,
+              foodName: meal.foodName,
+              calories: meal.calories ?? null,
+              createdAt: coerceDate(meal.createdAt),
+              photoUrl,
+            };
+          } catch {
+            return {
+              id: meal.id,
+              foodName: meal.foodName,
+              calories: meal.calories ?? null,
+              createdAt: coerceDate(meal.createdAt),
+            };
+          }
+        })
+      );
+
+      if (!isActive) return;
+      setTodaySummary(summary);
+      setRecentMeals(mealsWithPhotos);
+    };
+
+    const loadSyncMeals = async () => {
+      const response = await fetch('/api/sync/meals?limit=200');
+      if (!response.ok) {
+        throw new Error('Failed to load synced meals');
+      }
+      const data = await response.json();
+      const meals: SyncMeal[] = data.meals ?? [];
+
+      const mealsWithTotals: MealWithTotals[] = meals.map(meal => ({
+        meal,
+        totals: getSyncMealTotals(meal),
+        createdAt: coerceDate(meal.timestamp),
+      }));
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const todayMeals = mealsWithTotals.filter(({ createdAt }) => {
+        const mealDate = new Date(createdAt);
+        mealDate.setHours(0, 0, 0, 0);
+        return mealDate.getTime() === today.getTime();
+      });
+
+      const summary: TodaySummary = todayMeals.reduce(
+        (totals, entry) => ({
+          calories: totals.calories + entry.totals.calories,
+          protein: totals.protein + entry.totals.protein,
+          carbs: totals.carbs + entry.totals.carbs,
+          fats: totals.fats + entry.totals.fats,
+          mealCount: totals.mealCount + 1,
+        }),
+        { calories: 0, protein: 0, carbs: 0, fats: 0, mealCount: 0 },
+      );
+
+      const recent = mealsWithTotals.slice(0, 3);
+      const mealsWithPhotos: MealWithPhoto[] = await Promise.all(
+        recent.map(async ({ meal, totals, createdAt }) => {
+          const primaryItem = meal.items[0];
+          const foodName = primaryItem?.foodName || 'Meal';
+          const photoUrl = meal.photoId ? await fetchSignedThumbnail(meal.photoId) : undefined;
+          return {
+            id: meal.id,
+            foodName,
+            calories: totals.calories,
+            createdAt,
+            photoUrl,
+          };
+        }),
+      );
+
+      if (!isActive) return;
+      setTodaySummary(summary);
+      setRecentMeals(mealsWithPhotos);
+    };
+
     const loadMeals = async () => {
       try {
         setIsLoading(true);
-        const allMeals = await getAllMeals();
-
-        // Cleanup old URLs
-        photoUrlsRef.current.forEach(url => URL.revokeObjectURL(url));
-        photoUrlsRef.current = [];
-
-        // Calculate today's summary
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        const todayMeals = allMeals.filter(meal => {
-          const mealDate = new Date(meal.createdAt);
-          mealDate.setHours(0, 0, 0, 0);
-          return mealDate.getTime() === today.getTime();
-        });
-
-        const summary: TodaySummary = {
-          calories: 0,
-          protein: 0,
-          carbs: 0,
-          fats: 0,
-          mealCount: todayMeals.length,
-        };
-
-        todayMeals.forEach(meal => {
-          summary.calories += meal.calories || 0;
-          summary.protein += meal.protein || 0;
-          summary.carbs += meal.carbohydrates || 0;
-          summary.fats += meal.fats || 0;
-        });
-
-        setTodaySummary(summary);
-
-        // Get recent meals (last 3)
-        const recent = allMeals.slice(0, 3);
-        const mealsWithPhotos = await Promise.all(
-          recent.map(async (meal) => {
-            try {
-              const photo = await getPhoto(meal.photoId);
-              const photoUrl = photo ? URL.createObjectURL(photo.blob) : undefined;
-              if (photoUrl) {
-                photoUrlsRef.current.push(photoUrl);
-              }
-              return { ...meal, photoUrl };
-            } catch {
-              return { ...meal };
-            }
-          })
-        );
-
-        setRecentMeals(mealsWithPhotos);
+        if (session?.user?.id) {
+          await loadSyncMeals();
+        } else {
+          await loadLocalMeals();
+        }
       } catch (err) {
         console.error('Failed to load meals:', err);
       } finally {
-        setIsLoading(false);
+        if (isActive) {
+          setIsLoading(false);
+        }
       }
     };
 
     loadMeals();
 
     return () => {
+      isActive = false;
       photoUrlsRef.current.forEach(url => URL.revokeObjectURL(url));
       photoUrlsRef.current = [];
     };
-  }, []);
+  }, [session?.user?.id]);
 
   const formatTime = useCallback((date: Date) => {
     const now = new Date();
@@ -268,7 +402,7 @@ export default function Home() {
 
                   {/* Calories */}
                   <div className="text-right flex-shrink-0">
-                    <span className="font-semibold text-slate-800">{meal.calories || '-'}</span>
+                    <span className="font-semibold text-slate-800">{meal.calories ?? '-'}</span>
                     <span className="text-xs text-slate-500 ml-1">kcal</span>
                   </div>
                 </Link>

@@ -7,38 +7,12 @@
  * Allows viewing meal details.
  */
 
-import { useState, useCallback } from 'react';
 import AppLayout from '@/app/components/layout/AppLayout';
-import MealHistory from '@/app/components/meal/MealHistory';
-import { MealHistory as SyncMealHistory } from '@/app/components/meals/MealHistory';
-import MealDetail from '@/app/components/meal/MealDetail';
 import { useI18n } from '@/lib/i18n';
-import type { Meal } from '@/types/meal';
+import { MealHistory as SyncMealHistory } from '@/app/components/meals/MealHistory';
 
 export default function HistoryPage() {
   const { t } = useI18n();
-  const [selectedMeal, setSelectedMeal] = useState<Meal | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  const handleMealSelect = useCallback((meal: Meal) => {
-    setSelectedMeal(meal);
-  }, []);
-
-  const handleCloseDetail = useCallback(() => {
-    setSelectedMeal(null);
-  }, []);
-
-  const handleMealUpdated = useCallback(() => {
-    // Refresh the meal list
-    setRefreshKey(prev => prev + 1);
-    setSelectedMeal(null);
-  }, []);
-
-  const handleMealDeleted = useCallback(() => {
-    // Refresh the meal list
-    setRefreshKey(prev => prev + 1);
-    setSelectedMeal(null);
-  }, []);
 
   return (
     <AppLayout>
@@ -51,28 +25,8 @@ export default function HistoryPage() {
 
       {/* Main Content */}
       <main className="max-w-lg mx-auto px-4 py-6">
-        <MealHistory key={refreshKey} onMealSelect={handleMealSelect} />
-
-        <section className="mt-10 border-t border-slate-200 pt-6">
-          <h2 className="text-lg font-semibold text-slate-800">Sync history (multi-item)</h2>
-          <p className="mt-1 text-sm text-slate-500">
-            Prototype history list for synced meals.
-          </p>
-          <div className="mt-4">
-            <SyncMealHistory />
-          </div>
-        </section>
+        <SyncMealHistory />
       </main>
-
-      {/* Meal Detail Modal */}
-      {selectedMeal && (
-        <MealDetail
-          meal={selectedMeal}
-          onClose={handleCloseDetail}
-          onUpdated={handleMealUpdated}
-          onDeleted={handleMealDeleted}
-        />
-      )}
     </AppLayout>
   );
 }
