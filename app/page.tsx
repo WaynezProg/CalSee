@@ -15,8 +15,11 @@
 import { useState, useCallback, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import CameraCapture from '@/app/components/camera/CameraCapture';
 import MealForm from '@/app/components/meal/MealForm';
+import SignInButton from '@/app/components/auth/SignInButton';
+import UserProfile from '@/app/components/auth/UserProfile';
 import ConsentDialog, { CONSENT_VERSION } from '@/app/components/ui/ConsentDialog';
 import ConsentWithdraw from '@/app/components/ui/ConsentWithdraw';
 import { useI18n } from '@/lib/i18n';
@@ -37,6 +40,7 @@ export default function Home() {
   // Workflow state
   const [step, setStep] = useState<WorkflowStep>('capture');
   const [error, setError] = useState<string | null>(null);
+  const { status: authStatus } = useSession();
 
   // Photo state
   const [photoBlob, setPhotoBlob] = useState<Blob | null>(null);
@@ -280,7 +284,14 @@ export default function Home() {
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-lg mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-xl font-semibold text-gray-900">{t('app.name')}</h1>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col items-end gap-3 sm:flex-row sm:items-center">
+            <div className="min-w-[160px]">
+              {authStatus === 'loading' && (
+                <span className="text-xs text-gray-500">Checking session...</span>
+              )}
+              {authStatus === 'authenticated' && <UserProfile />}
+              {authStatus === 'unauthenticated' && <SignInButton />}
+            </div>
             <ConsentWithdraw onWithdraw={handleConsentWithdrawn} />
             <Link
               href="/history"
