@@ -13,10 +13,13 @@ const securityHeaders = {
 };
 
 async function handleAuth(request: NextRequest) {
-  const result = rateLimit(request);
-  const rateLimitHeaders = getRateLimitHeaders(result);
+  const pathname = new URL(request.url).pathname;
+  const shouldRateLimit =
+    pathname.includes("/api/auth/signin") || pathname.includes("/api/auth/callback");
+  const result = shouldRateLimit ? rateLimit(request) : null;
+  const rateLimitHeaders = result ? getRateLimitHeaders(result) : {};
 
-  if (!result.allowed) {
+  if (result && !result.allowed) {
     return new Response(
       JSON.stringify({
         error: "rate_limit_exceeded",

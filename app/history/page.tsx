@@ -8,7 +8,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import Link from 'next/link';
+import AppLayout from '@/app/components/layout/AppLayout';
 import MealHistory from '@/app/components/meal/MealHistory';
 import MealDetail from '@/app/components/meal/MealDetail';
 import { useI18n } from '@/lib/i18n';
@@ -40,38 +40,11 @@ export default function HistoryPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <AppLayout>
       {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-lg mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/"
-              className="text-gray-600 hover:text-gray-900"
-              aria-label={t('nav.backHome')}
-            >
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-            </Link>
-            <h1 className="text-xl font-semibold text-gray-900">{t('nav.history')}</h1>
-          </div>
-          <Link
-            href="/"
-            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-          >
-            {t('nav.newEntry')}
-          </Link>
+      <header className="bg-white/80 backdrop-blur-sm border-b border-slate-200 sticky top-0 z-40">
+        <div className="max-w-lg mx-auto px-4 py-4">
+          <h1 className="text-xl font-semibold text-slate-800">{t('nav.history')}</h1>
         </div>
       </header>
 
@@ -89,6 +62,6 @@ export default function HistoryPage() {
           onDeleted={handleMealDeleted}
         />
       )}
-    </div>
+    </AppLayout>
   );
 }
