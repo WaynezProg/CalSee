@@ -212,45 +212,50 @@ export default function MealDetail({
               {/* Nutrition */}
               <div className="bg-gray-50 rounded-lg p-4">
                 <h4 className="text-sm font-medium text-gray-700 mb-3">{t('mealDetail.nutritionTitle')}</h4>
+
+                {/* Calories - Prominent display */}
+                <div className="bg-white rounded-lg p-3 text-center mb-3">
+                  <span className="text-2xl font-bold text-gray-900">
+                    {meal.calories != null ? meal.calories : '--'}
+                  </span>
+                  <span className="text-sm text-gray-600 ml-1">kcal</span>
+                </div>
+
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">{t('mealDetail.caloriesLabel')}</span>
-                    <span>
-                      {meal.calories != null ? (
-                        <>{meal.calories} kcal <span className="text-xs text-gray-400">{t('mealForm.estimated')}</span></>
-                      ) : (
-                        <span className="text-gray-400">{t('mealForm.dataMissing')}</span>
-                      )}
+                    <span className="text-gray-700">{t('mealDetail.proteinLabel')}</span>
+                    <span className="text-gray-900 font-medium">
+                      {meal.protein != null ? `${meal.protein}g` : '--'}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">{t('mealDetail.proteinLabel')}</span>
-                    <span>
-                      {meal.protein != null ? (
-                        <>{meal.protein}g <span className="text-xs text-gray-400">{t('mealForm.estimated')}</span></>
-                      ) : (
-                        <span className="text-gray-400">{t('mealForm.dataMissing')}</span>
-                      )}
+                    <span className="text-gray-700">{t('mealDetail.carbsLabel')}</span>
+                    <span className="text-gray-900 font-medium">
+                      {meal.carbohydrates != null ? `${meal.carbohydrates}g` : '--'}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">{t('mealDetail.carbsLabel')}</span>
-                    <span>
-                      {meal.carbohydrates != null ? (
-                        <>{meal.carbohydrates}g <span className="text-xs text-gray-400">{t('mealForm.estimated')}</span></>
-                      ) : (
-                        <span className="text-gray-400">{t('mealForm.dataMissing')}</span>
-                      )}
+                    <span className="text-gray-700">{t('mealDetail.fatsLabel')}</span>
+                    <span className="text-gray-900 font-medium">
+                      {meal.fats != null ? `${meal.fats}g` : '--'}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">{t('mealDetail.fatsLabel')}</span>
-                    <span>
-                      {meal.fats != null ? (
-                        <>{meal.fats}g <span className="text-xs text-gray-400">{t('mealForm.estimated')}</span></>
-                      ) : (
-                        <span className="text-gray-400">{t('mealForm.dataMissing')}</span>
-                      )}
+                    <span className="text-gray-700">{t('mealForm.fiberLabel')}</span>
+                    <span className="text-gray-900 font-medium">
+                      {meal.fiber != null ? `${meal.fiber}g` : '--'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-700">{t('mealForm.sugarLabel')}</span>
+                    <span className="text-gray-900 font-medium">
+                      {meal.sugar != null ? `${meal.sugar}g` : '--'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-700">{t('mealForm.sodiumLabel')}</span>
+                    <span className="text-gray-900 font-medium">
+                      {meal.sodium != null ? `${meal.sodium}mg` : '--'}
                     </span>
                   </div>
                 </div>

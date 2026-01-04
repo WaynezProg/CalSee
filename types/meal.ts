@@ -13,13 +13,36 @@ export interface Meal {
   foodName: string;                   // Primary recognized food name (user may have corrected)
   alternativeFoods?: string[];        // Alternative food candidates (when confidence was low)
   portionSize: string;                // Portion size in serving-based units (e.g., "1 bowl", "2 servings")
+
+  // Macronutrients
   calories?: number;                  // Estimated calories (nullable if data unavailable)
-  protein?: number;                   // Estimated protein in grams (nullable if data unavailable)
-  carbohydrates?: number;             // Estimated carbohydrates in grams (nullable if data unavailable)
-  fats?: number;                      // Estimated fats in grams (nullable if data unavailable)
+  protein?: number;                   // Estimated protein in grams
+  carbohydrates?: number;             // Estimated carbohydrates in grams
+  fats?: number;                      // Estimated fats in grams
+  fiber?: number;                     // Estimated fiber in grams
+  sugar?: number;                     // Estimated sugar in grams
+  saturatedFat?: number;              // Estimated saturated fat in grams
+
+  // Minerals
+  sodium?: number;                    // Estimated sodium in milligrams
+  potassium?: number;                 // Estimated potassium in milligrams
+  calcium?: number;                   // Estimated calcium in milligrams
+  iron?: number;                      // Estimated iron in milligrams
+
+  // Vitamins
+  vitaminA?: number;                  // Estimated vitamin A in micrograms
+  vitaminC?: number;                  // Estimated vitamin C in milligrams
+  vitaminD?: number;                  // Estimated vitamin D in micrograms
+  vitaminB12?: number;                // Estimated vitamin B12 in micrograms
+
+  // Other
+  cholesterol?: number;               // Estimated cholesterol in milligrams
+
+  // Metadata
   recognitionConfidence: number;      // Confidence score from recognition (0.0-1.0)
   nutritionDataComplete: boolean;     // Whether all nutrition values are available
   sourceDatabase?: string;            // Database reference (e.g., "USDA FoodData Central")
+  isAIEstimate?: boolean;             // Whether nutrition was estimated by AI
   createdAt: Date;                    // Timestamp when meal was created
   updatedAt: Date;                    // Timestamp when meal was last modified
   isManualEntry: boolean;             // Whether meal was entered manually (vs. recognized)
