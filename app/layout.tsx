@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { SessionProvider } from "next-auth/react";
 import { I18nProvider, messages } from "@/lib/i18n";
 import ErrorBoundary from "@/app/components/ui/ErrorBoundary";
 import "./globals.css";
@@ -44,7 +45,7 @@ export default function RootLayout({
               </div>
             }
           >
-            {children}
+            <SessionProvider>{children}</SessionProvider>
           </ErrorBoundary>
         </I18nProvider>
       </body>

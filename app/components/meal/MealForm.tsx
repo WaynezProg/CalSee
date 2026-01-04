@@ -171,7 +171,7 @@ export default function MealForm({
               })}
             </span>
             {recognitionResult.confidence < 0.7 && (
-              <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded">
+              <span className="text-xs text-orange-600 bg-orange-50 px-2 py-0.5 rounded">
                 {t('mealForm.lowConfidence')}
               </span>
             )}
@@ -351,7 +351,7 @@ export default function MealForm({
             </p>
           )}
           {!nutritionData.dataComplete && !nutritionData.isAIEstimate && (
-            <p className="text-xs text-amber-600">
+            <p className="text-xs text-orange-600">
               {t('mealForm.partialNutritionWarning')}
             </p>
           )}

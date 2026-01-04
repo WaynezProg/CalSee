@@ -360,3 +360,20 @@ export async function getMealCount(): Promise<number> {
   const db = await openDatabase();
   return db.count('meals');
 }
+
+/**
+ * Clear all data from the database.
+ * WARNING: This will delete all meals, photos, and nutrition cache.
+ */
+export async function clearAllData(): Promise<void> {
+  const db = await openDatabase();
+  const tx = db.transaction(['meals', 'photos', 'nutritionCache'], 'readwrite');
+
+  await Promise.all([
+    tx.objectStore('meals').clear(),
+    tx.objectStore('photos').clear(),
+    tx.objectStore('nutritionCache').clear(),
+  ]);
+
+  await tx.done;
+}

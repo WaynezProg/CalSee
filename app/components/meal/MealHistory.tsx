@@ -111,9 +111,9 @@ export default function MealHistory({ onMealSelect }: MealHistoryProps) {
   if (meals.length === 0) {
     return (
       <div className="text-center py-12">
-        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <svg
-            className="w-8 h-8 text-gray-400"
+            className="w-8 h-8 text-blue-400"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -121,13 +121,13 @@ export default function MealHistory({ onMealSelect }: MealHistoryProps) {
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
-              strokeWidth={2}
+              strokeWidth={1.5}
               d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
             />
           </svg>
         </div>
-        <h3 className="text-lg font-medium text-gray-900 mb-2">{t('mealHistory.emptyTitle')}</h3>
-        <p className="text-sm text-gray-500">{t('mealHistory.emptySubtitle')}</p>
+        <h3 className="text-lg font-medium text-slate-800 mb-2">{t('mealHistory.emptyTitle')}</h3>
+        <p className="text-sm text-slate-500">{t('mealHistory.emptySubtitle')}</p>
       </div>
     );
   }
@@ -138,10 +138,10 @@ export default function MealHistory({ onMealSelect }: MealHistoryProps) {
         <button
           key={meal.id}
           onClick={() => onMealSelect?.(meal)}
-          className="w-full bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex items-center gap-4 hover:bg-gray-50 transition-colors text-left"
+          className="w-full bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex items-center gap-4 hover:shadow-md transition-shadow text-left"
         >
           {/* Photo thumbnail */}
-          <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+          <div className="w-16 h-16 bg-slate-100 rounded-xl overflow-hidden flex-shrink-0">
             {meal.photoUrl ? (
               <img
                 src={meal.photoUrl}
@@ -151,7 +151,7 @@ export default function MealHistory({ onMealSelect }: MealHistoryProps) {
             ) : (
               <div className="w-full h-full flex items-center justify-center">
                 <svg
-                  className="w-6 h-6 text-gray-400"
+                  className="w-6 h-6 text-slate-300"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -159,7 +159,7 @@ export default function MealHistory({ onMealSelect }: MealHistoryProps) {
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    strokeWidth={2}
+                    strokeWidth={1.5}
                     d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                   />
                 </svg>
@@ -169,26 +169,26 @@ export default function MealHistory({ onMealSelect }: MealHistoryProps) {
 
           {/* Meal info */}
           <div className="flex-grow min-w-0">
-            <h3 className="font-medium text-gray-900 truncate">{meal.foodName}</h3>
-            <p className="text-sm text-gray-500">{meal.portionSize}</p>
-            <p className="text-xs text-gray-400 mt-1">{formatDate(meal.createdAt)}</p>
+            <h3 className="font-medium text-slate-800 truncate">{meal.foodName}</h3>
+            <p className="text-sm text-slate-500">{meal.portionSize}</p>
+            <p className="text-xs text-slate-400 mt-1">{formatDate(meal.createdAt)}</p>
           </div>
 
           {/* Calories */}
           <div className="flex-shrink-0 text-right">
             {meal.calories != null ? (
               <>
-                <p className="font-medium text-gray-900">{meal.calories}</p>
-                <p className="text-xs text-gray-500">{t('mealHistory.caloriesUnit')}</p>
+                <p className="font-semibold text-slate-800">{meal.calories}</p>
+                <p className="text-xs text-slate-500">{t('mealHistory.caloriesUnit')}</p>
               </>
             ) : (
-              <p className="text-sm text-gray-400">-</p>
+              <p className="text-sm text-slate-400">-</p>
             )}
           </div>
 
           {/* Arrow */}
           <svg
-            className="w-5 h-5 text-gray-400 flex-shrink-0"
+            className="w-5 h-5 text-slate-400 flex-shrink-0"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"

@@ -271,7 +271,7 @@ export default function MealDetail({
                   <p>{t('mealDetail.confidence', { percent: Math.round(meal.recognitionConfidence * 100) })}</p>
                 )}
                 {meal.isManualEntry && (
-                  <p className="text-amber-600">{t('mealDetail.manualEntry')}</p>
+                  <p className="text-blue-600">{t('mealDetail.manualEntry')}</p>
                 )}
               </div>
 

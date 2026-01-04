@@ -1,464 +1,288 @@
 'use client';
 
 /**
- * Home Page - Meal Photo Logging
+ * Home Page - Dashboard
  *
- * Main workflow:
- * 1. User selects/takes photo
- * 2. Photo is compressed
- * 3. Check consent, show dialog if needed
- * 4. Call recognition API (with consent)
- * 5. Show recognition result in form
- * 6. User confirms/corrects and saves
+ * Shows today's summary and recent meals.
+ * Provides quick access to add new meals.
  */
 
-import { useState, useCallback, useEffect } from 'react';
-import { v4 as uuidv4 } from 'uuid';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import CameraCapture from '@/app/components/camera/CameraCapture';
-import MealForm from '@/app/components/meal/MealForm';
-import ConsentDialog, { CONSENT_VERSION } from '@/app/components/ui/ConsentDialog';
-import ConsentWithdraw from '@/app/components/ui/ConsentWithdraw';
+import { useSession } from 'next-auth/react';
+import AppLayout from '@/app/components/layout/AppLayout';
 import { useI18n } from '@/lib/i18n';
-import { recognizeFoodWithRetry } from '@/lib/services/recognition';
-import {
-  addMeal,
-  addPhoto,
-  getCloudRecognitionConsent,
-  saveCloudRecognitionConsent,
-  isStorageApproachingLimit,
-} from '@/lib/db/indexeddb';
-import type { FoodRecognitionResult, MealFormData, Photo, Meal } from '@/types/meal';
+import { getAllMeals, getPhoto } from '@/lib/db/indexeddb';
+import type { Meal } from '@/types/meal';
 
-type WorkflowStep = 'capture' | 'processing' | 'confirm' | 'manualEntry' | 'success' | 'error';
+interface MealWithPhoto extends Meal {
+  photoUrl?: string;
+}
+
+interface TodaySummary {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fats: number;
+  mealCount: number;
+}
 
 export default function Home() {
-  const { t } = useI18n();
-  // Workflow state
-  const [step, setStep] = useState<WorkflowStep>('capture');
-  const [error, setError] = useState<string | null>(null);
+  const { t, locale } = useI18n();
+  const { data: session } = useSession();
+  const [recentMeals, setRecentMeals] = useState<MealWithPhoto[]>([]);
+  const [todaySummary, setTodaySummary] = useState<TodaySummary>({
+    calories: 0,
+    protein: 0,
+    carbs: 0,
+    fats: 0,
+    mealCount: 0,
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const photoUrlsRef = useRef<string[]>([]);
 
-  // Photo state
-  const [photoBlob, setPhotoBlob] = useState<Blob | null>(null);
-  const [photoWidth, setPhotoWidth] = useState(0);
-  const [photoHeight, setPhotoHeight] = useState(0);
-  const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
-
-  // Recognition state
-  const [recognitionResult, setRecognitionResult] = useState<FoodRecognitionResult | null>(null);
-  const [isRecognizing, setIsRecognizing] = useState(false);
-
-  // Consent state
-  const [hasConsent, setHasConsent] = useState<boolean | null>(null);
-  const [showConsentDialog, setShowConsentDialog] = useState(false);
-  const [pendingRecognition, setPendingRecognition] = useState(false);
-
-  // Check consent status on mount
+  // Load meals on mount
   useEffect(() => {
-    const checkConsent = async () => {
+    const loadMeals = async () => {
       try {
-        const consent = await getCloudRecognitionConsent();
-        setHasConsent(consent?.accepted ?? false);
+        setIsLoading(true);
+        const allMeals = await getAllMeals();
+
+        // Cleanup old URLs
+        photoUrlsRef.current.forEach(url => URL.revokeObjectURL(url));
+        photoUrlsRef.current = [];
+
+        // Calculate today's summary
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const todayMeals = allMeals.filter(meal => {
+          const mealDate = new Date(meal.createdAt);
+          mealDate.setHours(0, 0, 0, 0);
+          return mealDate.getTime() === today.getTime();
+        });
+
+        const summary: TodaySummary = {
+          calories: 0,
+          protein: 0,
+          carbs: 0,
+          fats: 0,
+          mealCount: todayMeals.length,
+        };
+
+        todayMeals.forEach(meal => {
+          summary.calories += meal.calories || 0;
+          summary.protein += meal.protein || 0;
+          summary.carbs += meal.carbohydrates || 0;
+          summary.fats += meal.fats || 0;
+        });
+
+        setTodaySummary(summary);
+
+        // Get recent meals (last 3)
+        const recent = allMeals.slice(0, 3);
+        const mealsWithPhotos = await Promise.all(
+          recent.map(async (meal) => {
+            try {
+              const photo = await getPhoto(meal.photoId);
+              const photoUrl = photo ? URL.createObjectURL(photo.blob) : undefined;
+              if (photoUrl) {
+                photoUrlsRef.current.push(photoUrl);
+              }
+              return { ...meal, photoUrl };
+            } catch {
+              return { ...meal };
+            }
+          })
+        );
+
+        setRecentMeals(mealsWithPhotos);
       } catch (err) {
-        console.error('Failed to check consent:', err);
-        setHasConsent(false);
+        console.error('Failed to load meals:', err);
+      } finally {
+        setIsLoading(false);
       }
     };
-    checkConsent();
-  }, []);
 
-  useEffect(() => {
-    if (!photoBlob) {
-      setPhotoPreviewUrl(null);
-      return;
-    }
-
-    const previewUrl = URL.createObjectURL(photoBlob);
-    setPhotoPreviewUrl(previewUrl);
+    loadMeals();
 
     return () => {
-      URL.revokeObjectURL(previewUrl);
+      photoUrlsRef.current.forEach(url => URL.revokeObjectURL(url));
+      photoUrlsRef.current = [];
     };
-  }, [photoBlob]);
+  }, []);
 
-  // Handle image captured
-  const handleImageCaptured = useCallback((blob: Blob, width: number, height: number) => {
-    setPhotoBlob(blob);
-    setPhotoWidth(width);
-    setPhotoHeight(height);
-    setError(null);
+  const formatTime = useCallback((date: Date) => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const mealDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const diffDays = Math.floor((today.getTime() - mealDate.getTime()) / (1000 * 60 * 60 * 24));
+    const timeLabel = date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
 
-    // Check if we need consent
-    if (hasConsent === false) {
-      setShowConsentDialog(true);
-      setPendingRecognition(true);
-    } else if (hasConsent === true) {
-      // Start recognition immediately
-      startRecognition(blob);
+    if (diffDays === 0) {
+      return t('mealHistory.today', { time: timeLabel });
+    } else if (diffDays === 1) {
+      return t('mealHistory.yesterday', { time: timeLabel });
     }
-  }, [hasConsent]);
+    return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
+  }, [locale, t]);
 
-  // Start recognition process
-  const startRecognition = useCallback(async (blob: Blob) => {
-    setStep('processing');
-    setIsRecognizing(true);
-    setError(null);
-
-    try {
-      const result = await recognizeFoodWithRetry(blob, true);
-
-      if (result.success && result.data) {
-        setRecognitionResult(result.data);
-        setStep('confirm');
-      } else {
-        // Recognition failed - stay on processing step and show error with retry option
-        setRecognitionResult(null);
-        if (result.error?.code === 'NO_FOOD_DETECTED') {
-          // No food detected - go to confirm for manual entry
-          setStep('confirm');
-        } else {
-          // Other errors (timeout, network) - allow retry
-          setError(result.error?.message || t('errors.recognitionFailedManual'));
-        }
-      }
-    } catch (err) {
-      console.error('Recognition error:', err);
-      setError(t('errors.recognitionErrorManual'));
-    } finally {
-      setIsRecognizing(false);
-    }
-  }, [t]);
-
-  // Handle retry recognition
-  const handleRetryRecognition = useCallback(() => {
-    if (photoBlob) {
-      setError(null);
-      startRecognition(photoBlob);
-    }
-  }, [photoBlob, startRecognition]);
-
-  // Handle skip to manual entry from processing
-  const handleSkipToManual = useCallback(() => {
-    setError(null);
-    setRecognitionResult(null);
-    setStep('confirm');
-  }, []);
-
-  // Handle consent accepted
-  const handleConsentAccept = useCallback(async () => {
-    try {
-      await saveCloudRecognitionConsent({
-        accepted: true,
-        version: CONSENT_VERSION,
-        timestamp: new Date(),
-      });
-      setHasConsent(true);
-      setShowConsentDialog(false);
-
-      // Start recognition if we have a pending photo
-      if (pendingRecognition && photoBlob) {
-        setPendingRecognition(false);
-        startRecognition(photoBlob);
-      }
-    } catch (err) {
-      console.error('Failed to save consent:', err);
-      setError(t('errors.consentSaveFailed'));
-    }
-  }, [pendingRecognition, photoBlob, startRecognition, t]);
-
-  // Handle consent declined
-  const handleConsentDecline = useCallback(() => {
-    setHasConsent(false);
-    setShowConsentDialog(false);
-    setPendingRecognition(false);
-    // Allow manual entry without recognition
-    setRecognitionResult(null);
-    setStep('confirm');
-  }, []);
-
-  // Handle form submit
-  const handleFormSubmit = useCallback(async (formData: MealFormData) => {
-    try {
-      // Check storage limit
-      const isApproachingLimit = await isStorageApproachingLimit();
-      if (isApproachingLimit) {
-        setError(t('errors.storageLow'));
-        return;
-      }
-
-      const mealId = uuidv4();
-      const now = new Date();
-      let photoId: string | undefined;
-
-      // Save photo if exists
-      if (photoBlob) {
-        photoId = uuidv4();
-        const photo: Photo = {
-          photoId,
-          blob: photoBlob,
-          mimeType: 'image/jpeg',
-          width: photoWidth,
-          height: photoHeight,
-        };
-        await addPhoto(photo);
-      }
-
-      // Save meal
-      const meal: Meal = {
-        id: mealId,
-        photoId: photoId || '',
-        foodName: formData.foodName,
-        portionSize: formData.portionSize,
-        calories: formData.calories,
-        protein: formData.protein,
-        carbohydrates: formData.carbohydrates,
-        fats: formData.fats,
-        recognitionConfidence: recognitionResult?.confidence ?? 0,
-        nutritionDataComplete: !!(formData.calories && formData.protein && formData.carbohydrates && formData.fats),
-        createdAt: now,
-        updatedAt: now,
-        isManualEntry: formData.isManualEntry || !photoBlob,
-      };
-      await addMeal(meal);
-
-      setStep('success');
-    } catch (err) {
-      console.error('Failed to save meal:', err);
-      if (err instanceof Error && err.name === 'QuotaExceededError') {
-        setError(t('errors.storageFull'));
-      } else {
-        setError(t('errors.saveFailed'));
-      }
-    }
-  }, [photoBlob, photoWidth, photoHeight, recognitionResult, t]);
-
-  const handleConsentWithdrawn = useCallback(() => {
-    setHasConsent(false);
-  }, []);
-
-  // Handle cancel
-  const handleCancel = useCallback(() => {
-    setStep('capture');
-    setPhotoBlob(null);
-    setPhotoWidth(0);
-    setPhotoHeight(0);
-    setPhotoPreviewUrl(null);
-    setRecognitionResult(null);
-    setError(null);
-  }, []);
-
-  // Handle new meal
-  const handleNewMeal = useCallback(() => {
-    setStep('capture');
-    setPhotoBlob(null);
-    setPhotoWidth(0);
-    setPhotoHeight(0);
-    setPhotoPreviewUrl(null);
-    setRecognitionResult(null);
-    setError(null);
-  }, []);
-
-  // Handle image error
-  const handleImageError = useCallback((errorMessage: string) => {
-    setError(errorMessage);
-  }, []);
-
-  // Handle manual entry (without photo)
-  const handleManualEntry = useCallback(() => {
-    setPhotoBlob(null);
-    setPhotoWidth(0);
-    setPhotoHeight(0);
-    setPhotoPreviewUrl(null);
-    setRecognitionResult(null);
-    setError(null);
-    setStep('manualEntry');
-  }, []);
+  const userName = session?.user?.name?.split(' ')[0] || '';
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <AppLayout>
       {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-lg mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-gray-900">{t('app.name')}</h1>
-          <div className="flex items-center gap-4">
-            <ConsentWithdraw onWithdraw={handleConsentWithdrawn} />
-            <Link
-              href="/history"
-              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-            >
-              {t('nav.history')}
-            </Link>
+      <header className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+        <div className="max-w-lg mx-auto px-4 pt-8 pb-12">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-2xl font-bold">{t('app.name')}</h1>
+              {userName && (
+                <p className="text-blue-100 text-sm mt-1">
+                  {userName}
+                </p>
+              )}
+            </div>
+            {session?.user?.image ? (
+              <img
+                src={session.user.image}
+                alt={session.user.name || ''}
+                className="w-10 h-10 rounded-full border-2 border-white/30"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-blue-400 flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                </svg>
+              </div>
+            )}
           </div>
+
+          <h2 className="text-xl font-medium">{t('home.greeting')}</h2>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-lg mx-auto px-4 py-6">
-        {/* Error Message */}
-        {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
-            {error}
+      <main className="max-w-lg mx-auto px-4 -mt-6">
+        {/* Today's Summary Card */}
+        <div className="bg-white rounded-3xl shadow-lg p-6 mb-6">
+          <h3 className="text-sm font-medium text-slate-500 mb-4">{t('home.todaySummary')}</h3>
+
+          {/* Calories - Main */}
+          <div className="text-center mb-6">
+            <span className="text-4xl font-bold text-slate-800">{todaySummary.calories}</span>
+            <span className="text-slate-500 ml-1">kcal</span>
           </div>
-        )}
 
-        {/* Step: Capture */}
-        {step === 'capture' && (
-          <div className="space-y-4">
-            <div className="text-center mb-6">
-              <h2 className="text-lg font-medium text-gray-900">{t('home.logMealTitle')}</h2>
-              <p className="text-sm text-gray-500 mt-1">{t('home.logMealSubtitle')}</p>
-            </div>
-            <CameraCapture
-              onImageCaptured={handleImageCaptured}
-              onError={handleImageError}
-            />
-            <div className="text-center pt-4 border-t border-gray-200">
-              <button
-                type="button"
-                onClick={handleManualEntry}
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-              >
-                {t('home.manualEntryButton')}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Step: Processing */}
-        {step === 'processing' && (
-          <div className="text-center py-12">
-            {isRecognizing ? (
-              <>
-                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto mb-4" />
-                <p className="text-gray-600">{t('home.processingTitle')}</p>
-                <p className="text-sm text-gray-400 mt-2">{t('home.processingNotice')}</p>
-              </>
-            ) : (
-              <>
-                {/* Photo Preview */}
-                {photoPreviewUrl && (
-                  <div className="mb-6">
-                    <img
-                      src={photoPreviewUrl}
-                      alt={t('home.photoAlt')}
-                      className="w-full max-h-48 object-contain rounded-lg mx-auto"
-                    />
-                  </div>
-                )}
-
-                {/* Retry and Skip buttons */}
-                <div className="flex flex-col gap-3 max-w-xs mx-auto">
-                  <button
-                    onClick={handleRetryRecognition}
-                    className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                  >
-                    {t('home.retryRecognition')}
-                  </button>
-                  <button
-                    onClick={handleSkipToManual}
-                    className="w-full px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
-                    {t('home.skipToManual')}
-                  </button>
-                  <button
-                    onClick={handleCancel}
-                    className="w-full px-6 py-2 text-gray-500 hover:text-gray-700 transition-colors text-sm"
-                  >
-                    {t('mealForm.cancel')}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* Step: Confirm */}
-        {step === 'confirm' && (
-          <div className="space-y-4">
-            <div className="text-center mb-4">
-              <h2 className="text-lg font-medium text-gray-900">{t('home.confirmTitle')}</h2>
-            </div>
-
-            {/* Photo Preview */}
-            {photoPreviewUrl && (
-              <div className="mb-4">
-                <img
-                  src={photoPreviewUrl}
-                  alt={t('home.photoAlt')}
-                  className="w-full max-h-48 object-contain rounded-lg"
-                />
+          {/* Macros */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="text-center">
+              <div className="w-12 h-12 mx-auto rounded-full bg-rose-100 flex items-center justify-center mb-2">
+                <span className="text-rose-600 font-semibold text-sm">{todaySummary.protein}g</span>
               </div>
-            )}
-
-            <MealForm
-              recognitionResult={recognitionResult}
-              isLoading={isRecognizing}
-              onSubmit={handleFormSubmit}
-              onCancel={handleCancel}
-            />
-          </div>
-        )}
-
-        {/* Step: Manual Entry (no photo) */}
-        {step === 'manualEntry' && (
-          <div className="space-y-4">
-            <div className="text-center mb-4">
-              <h2 className="text-lg font-medium text-gray-900">{t('home.manualEntryButton')}</h2>
+              <span className="text-xs text-slate-500">{t('mealForm.proteinLabel')}</span>
             </div>
-
-            <MealForm
-              recognitionResult={null}
-              isLoading={false}
-              onSubmit={handleFormSubmit}
-              onCancel={handleCancel}
-            />
-          </div>
-        )}
-
-        {/* Step: Success */}
-        {step === 'success' && (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg
-                className="w-8 h-8 text-green-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
+            <div className="text-center">
+              <div className="w-12 h-12 mx-auto rounded-full bg-sky-100 flex items-center justify-center mb-2">
+                <span className="text-sky-600 font-semibold text-sm">{todaySummary.carbs}g</span>
+              </div>
+              <span className="text-xs text-slate-500">{t('mealForm.carbsLabel')}</span>
             </div>
-            <h2 className="text-lg font-medium text-gray-900 mb-2">{t('home.successTitle')}</h2>
-            <p className="text-sm text-gray-500 mb-6">{t('home.successSubtitle')}</p>
-            <div className="flex gap-3 justify-center">
-              <button
-                onClick={handleNewMeal}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                {t('home.newMeal')}
-              </button>
-              <Link
-                href="/history"
-                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                {t('home.viewHistory')}
-              </Link>
+            <div className="text-center">
+              <div className="w-12 h-12 mx-auto rounded-full bg-amber-100 flex items-center justify-center mb-2">
+                <span className="text-amber-600 font-semibold text-sm">{todaySummary.fats}g</span>
+              </div>
+              <span className="text-xs text-slate-500">{t('mealForm.fatsLabel')}</span>
             </div>
           </div>
-        )}
+        </div>
+
+        {/* Quick Add Button */}
+        <Link
+          href="/add"
+          className="flex items-center justify-center gap-3 w-full bg-blue-500 hover:bg-blue-600 text-white rounded-2xl py-4 px-6 shadow-md transition-colors mb-6"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+          </svg>
+          <span className="font-medium text-lg">{t('home.quickAdd')}</span>
+        </Link>
+
+        {/* Recent Meals */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-slate-500">{t('home.recentMeals')}</h3>
+            <Link href="/history" className="text-sm text-blue-500 hover:text-blue-600">
+              {t('home.viewAll')}
+            </Link>
+          </div>
+
+          {isLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-white rounded-2xl p-4 animate-pulse">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 bg-slate-100 rounded-xl" />
+                    <div className="flex-1">
+                      <div className="h-4 bg-slate-100 rounded w-24 mb-2" />
+                      <div className="h-3 bg-slate-50 rounded w-16" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : recentMeals.length === 0 ? (
+            <div className="bg-white rounded-2xl p-8 text-center">
+              <div className="w-16 h-16 mx-auto bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+              </div>
+              <p className="text-slate-700 font-medium mb-1">{t('home.noMealsToday')}</p>
+              <p className="text-slate-500 text-sm">{t('home.startLogging')}</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {recentMeals.map((meal) => (
+                <Link
+                  key={meal.id}
+                  href="/history"
+                  className="flex items-center gap-4 bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow"
+                >
+                  {/* Photo */}
+                  <div className="w-14 h-14 bg-slate-100 rounded-xl overflow-hidden flex-shrink-0">
+                    {meal.photoUrl ? (
+                      <img
+                        src={meal.photoUrl}
+                        alt={meal.foodName}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <svg className="w-6 h-6 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium text-slate-800 truncate">{meal.foodName}</h4>
+                    <p className="text-xs text-slate-500">{formatTime(meal.createdAt)}</p>
+                  </div>
+
+                  {/* Calories */}
+                  <div className="text-right flex-shrink-0">
+                    <span className="font-semibold text-slate-800">{meal.calories || '-'}</span>
+                    <span className="text-xs text-slate-500 ml-1">kcal</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
       </main>
-
-      {/* Consent Dialog */}
-      <ConsentDialog
-        isOpen={showConsentDialog}
-        onAccept={handleConsentAccept}
-        onDecline={handleConsentDecline}
-      />
-    </div>
+    </AppLayout>
   );
 }

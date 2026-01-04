@@ -4,7 +4,14 @@
     "description": "拍照記錄飲食，AI 智能辨識食物與營養資訊"
   },
   "app": {
-    "name": "CalSee"
+    "name": "CalSee",
+    "tagline": "記錄每一餐的美好"
+  },
+  "bottomNav": {
+    "home": "首頁",
+    "add": "新增",
+    "history": "記錄",
+    "settings": "設定"
   },
   "nav": {
     "history": "飲食記錄",
@@ -13,6 +20,13 @@
     "backHome": "返回首頁"
   },
   "home": {
+    "greeting": "今天想吃什麼？",
+    "todaySummary": "今日攝取",
+    "quickAdd": "快速記錄",
+    "recentMeals": "最近記錄",
+    "viewAll": "查看全部",
+    "noMealsToday": "今天還沒有記錄",
+    "startLogging": "開始記錄你的第一餐",
     "logMealTitle": "記錄飲食",
     "logMealSubtitle": "拍攝或選擇食物照片",
     "manualEntryButton": "手動輸入食物",
@@ -62,7 +76,10 @@
     "clearPhoto": "清除照片",
     "processing": "處理中...",
     "cta": "點擊拍照或選擇照片",
-    "supportedFormats": "支援 JPG、PNG 格式"
+    "supportedFormats": "支援 JPG、PNG 格式",
+    "takePhoto": "拍攝照片",
+    "chooseFromGallery": "從相簿選擇",
+    "or": "或"
   },
   "mealForm": {
     "foodNameLabel": "食物名稱",
@@ -165,5 +182,26 @@
     "label": "撤回雲端辨識同意",
     "confirm": "確定要撤回雲端辨識同意嗎？",
     "success": "已撤回同意"
+  },
+  "settings": {
+    "title": "設定",
+    "accountSection": "帳號",
+    "privacySection": "隱私與資料",
+    "aboutSection": "關於",
+    "signedInAs": "已登入為",
+    "signOut": "登出",
+    "signIn": "登入",
+    "signInDescription": "登入以同步您的資料",
+    "cloudRecognition": "雲端辨識服務",
+    "cloudRecognitionEnabled": "已啟用",
+    "cloudRecognitionDisabled": "未啟用",
+    "withdrawConsent": "撤回同意",
+    "dataStorage": "資料儲存",
+    "dataStorageLocal": "僅儲存於本機裝置",
+    "clearData": "清除所有資料",
+    "clearDataConfirm": "確定要清除所有飲食記錄嗎？此操作無法復原。",
+    "clearDataSuccess": "已清除所有資料",
+    "version": "版本",
+    "developer": "開發者"
   }
 }
