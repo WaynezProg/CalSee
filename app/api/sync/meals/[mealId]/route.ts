@@ -5,7 +5,7 @@ import { deletePhoto } from "@/lib/db/s3/client";
 import { calculateNutritionTotals } from "@/lib/utils/nutrition-calculator";
 
 interface RouteParams {
-  params: { mealId: string };
+  params: Promise<{ mealId: string }>;
 }
 
 export async function DELETE(request: Request, { params }: RouteParams) {
@@ -14,8 +14,10 @@ export async function DELETE(request: Request, { params }: RouteParams) {
     return NextResponse.json({ error: "unauthorized", message: "Unauthorized" }, { status: 401 });
   }
 
+  const { mealId } = await params;
+
   const meal = await prisma.meal.findFirst({
-    where: { id: params.mealId, userId: session.user.id },
+    where: { id: mealId, userId: session.user.id },
   });
 
   if (!meal) {
@@ -58,6 +60,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
     return NextResponse.json({ error: "unauthorized", message: "Unauthorized" }, { status: 401 });
   }
 
+  const { mealId } = await params;
   const data = await request.json();
 
   if (!data?.items || !Array.isArray(data.items) || data.items.length === 0) {
@@ -83,7 +86,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
   }
 
   const meal = await prisma.meal.findFirst({
-    where: { id: params.mealId, userId: session.user.id },
+    where: { id: mealId, userId: session.user.id },
     include: { items: true },
   });
 

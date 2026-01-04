@@ -51,7 +51,7 @@ export default function MealForm({
   // Update form when recognition result changes
   useEffect(() => {
     if (recognitionResult) {
-      setFoodName(recognitionResult.primaryCandidate);
+      setFoodName(recognitionResult.primaryCandidate ?? '');
       setIsManualEntry(false);
       // Show alternatives if confidence is low
       setShowAlternatives(recognitionResult.confidence < 0.7);
@@ -67,7 +67,7 @@ export default function MealForm({
 
   // Fetch nutrition data when food name changes (with debounce)
   useEffect(() => {
-    const trimmedName = foodName.trim();
+    const trimmedName = (foodName ?? '').trim();
 
     // Skip if no food name or if we already have nutrition data for this food
     if (!trimmedName || trimmedName.length < 2) {
@@ -82,7 +82,7 @@ export default function MealForm({
     // Debounce: wait for user to stop typing
     const timeoutId = setTimeout(async () => {
       // Skip if food name changed during debounce
-      if (foodName.trim() !== trimmedName) {
+      if ((foodName ?? '').trim() !== trimmedName) {
         return;
       }
 
@@ -92,7 +92,7 @@ export default function MealForm({
       try {
         const result = await getNutritionWithAIFallback(trimmedName, portionSize);
         // Only update if food name hasn't changed
-        if (foodName.trim() === trimmedName) {
+        if ((foodName ?? '').trim() === trimmedName) {
           if (result.success && result.data) {
             setNutritionData(result.data);
           } else {
@@ -102,7 +102,7 @@ export default function MealForm({
       } catch (error) {
         console.error('Failed to fetch nutrition data:', error);
         // Only clear if food name hasn't changed
-        if (foodName.trim() === trimmedName) {
+        if ((foodName ?? '').trim() === trimmedName) {
           setNutritionData(null);
         }
       } finally {
@@ -121,12 +121,13 @@ export default function MealForm({
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!foodName.trim()) {
+    const trimmedFoodName = (foodName ?? '').trim();
+    if (!trimmedFoodName) {
       return;
     }
 
     const formData: MealFormData = {
-      foodName: foodName.trim(),
+      foodName: trimmedFoodName,
       portionSize,
       calories: nutritionData?.calories,
       protein: nutritionData?.protein,
@@ -154,7 +155,7 @@ export default function MealForm({
         <input
           type="text"
           id="foodName"
-          value={foodName}
+          value={foodName ?? ''}
           onChange={(e) => setFoodName(e.target.value)}
           placeholder={t('mealForm.foodNamePlaceholder')}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder:text-gray-400"
@@ -379,7 +380,7 @@ export default function MealForm({
         <button
           type="submit"
           className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={isLoading || !foodName.trim()}
+          disabled={isLoading || !(foodName ?? '').trim()}
         >
           {t('mealForm.save')}
         </button>
