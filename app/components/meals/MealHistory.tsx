@@ -56,6 +56,24 @@ export function MealHistory() {
       for (const meal of mealsWithPhotos) {
         if (!meal.photoId) continue;
 
+        const setThumbnailUrl = (url: string) => {
+          setMeals(prev =>
+            prev.map(item =>
+              item.id === meal.id ? { ...item, thumbnailUrl: url } : item,
+            ),
+          );
+        };
+
+        const fallbackToMainPhoto = async () => {
+          try {
+            const signedMain = await fetchSignedUrl(meal.photoId, "main");
+            if (!isActive) return;
+            setThumbnailUrl(signedMain.url);
+          } catch {
+            // Ignore if main photo also fails.
+          }
+        };
+
         try {
           const cached = await getThumbnail(meal.photoId);
           if (cached) {
@@ -64,19 +82,23 @@ export function MealHistory() {
               URL.revokeObjectURL(url);
               return;
             }
-            setMeals(prev =>
-              prev.map(item =>
-                item.id === meal.id ? { ...item, thumbnailUrl: url } : item,
-              ),
-            );
+            setThumbnailUrl(url);
             continue;
           }
 
-          const signed = await fetchSignedUrl(meal.photoId, "thumbnail");
+          let signed: { url: string; expiresAt: string } | null = null;
+          try {
+            signed = await fetchSignedUrl(meal.photoId, "thumbnail");
+          } catch {
+            await fallbackToMainPhoto();
+            continue;
+          }
+
           try {
             const thumbnailResponse = await fetch(signed.url);
             if (!thumbnailResponse.ok) {
-              throw new Error("thumbnail_fetch_failed");
+              await fallbackToMainPhoto();
+              continue;
             }
             const blob = await thumbnailResponse.blob();
             await cacheThumbnail(meal.photoId, blob);
@@ -87,19 +109,15 @@ export function MealHistory() {
               return;
             }
 
-            setMeals(prev =>
-              prev.map(item =>
-                item.id === meal.id ? { ...item, thumbnailUrl: url } : item,
-              ),
-            );
+            setThumbnailUrl(url);
           } catch {
             if (!isActive) return;
-            // Fallback to signed URL to avoid CORS/cache issues.
-            setMeals(prev =>
-              prev.map(item =>
-                item.id === meal.id ? { ...item, thumbnailUrl: signed.url } : item,
-              ),
-            );
+            if (signed) {
+              // Fallback to signed URL to avoid CORS/cache issues.
+              setThumbnailUrl(signed.url);
+            } else {
+              await fallbackToMainPhoto();
+            }
           }
         } catch (err) {
           // Ignore thumbnail failures; cached thumbnails will still display.
