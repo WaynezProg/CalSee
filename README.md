@@ -24,6 +24,36 @@ CalSee is a Next.js proof-of-concept for logging meals by photo. It compresses i
 - Node.js 18+
 - API keys for recognition and nutrition services
 
+## Getting API Keys
+
+### Recognition API (Choose One)
+
+**Option 1: OpenAI Vision API (Recommended)**
+1. Sign up at [platform.openai.com](https://platform.openai.com/signup)
+2. Go to [API Keys](https://platform.openai.com/api-keys)
+3. Click "Create new secret key"
+4. Copy your key and set `RECOGNITION_API_TYPE=openai`
+
+> Note: Requires payment method. See [pricing](https://openai.com/pricing).
+
+**Option 2: Google Cloud Vision API**
+1. Create a project at [Google Cloud Console](https://console.cloud.google.com/)
+2. Enable [Cloud Vision API](https://console.cloud.google.com/apis/library/vision.googleapis.com)
+3. Go to APIs & Services > Credentials
+4. Click "Create Credentials" > "API key"
+5. Copy your key and set `RECOGNITION_API_TYPE=google`
+
+> Note: New accounts get $300 free credits. See [pricing](https://cloud.google.com/vision/pricing).
+
+### Nutrition API
+
+**USDA FoodData Central API (Free)**
+1. Go to [API Key Signup](https://fdc.nal.usda.gov/api-key-signup.html)
+2. Enter your name and email
+3. Check your email for the API key (arrives within minutes)
+
+> This API is completely free with generous rate limits.
+
 ## Setup
 
 ```bash

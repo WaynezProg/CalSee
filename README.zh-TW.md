@@ -24,6 +24,36 @@ CalSee 是一個以 Next.js 開發的概念驗證專案，讓使用者透過拍�
 - Node.js 18+
 - 辨識與營養服務的 API 金鑰
 
+## 取得 API 金鑰
+
+### 辨識 API（擇一）
+
+**選項 1：OpenAI Vision API（推薦）**
+1. 至 [platform.openai.com](https://platform.openai.com/signup) 註冊帳號
+2. 前往 [API Keys](https://platform.openai.com/api-keys) 頁面
+3. 點擊「Create new secret key」
+4. 複製金鑰並設定 `RECOGNITION_API_TYPE=openai`
+
+> 注意：需要綁定付款方式。詳見[定價說明](https://openai.com/pricing)。
+
+**選項 2：Google Cloud Vision API**
+1. 至 [Google Cloud Console](https://console.cloud.google.com/) 建立專案
+2. 啟用 [Cloud Vision API](https://console.cloud.google.com/apis/library/vision.googleapis.com)
+3. 前往「API 和服務」>「憑證」
+4. 點擊「建立憑證」>「API 金鑰」
+5. 複製金鑰並設定 `RECOGNITION_API_TYPE=google`
+
+> 注意：新帳號可獲得 $300 美元免費額度。詳見[定價說明](https://cloud.google.com/vision/pricing)。
+
+### 營養 API
+
+**USDA FoodData Central API（免費）**
+1. 前往 [API 金鑰申請頁面](https://fdc.nal.usda.gov/api-key-signup.html)
+2. 填寫姓名與電子郵件
+3. 查收郵件取得 API 金鑰（通常幾分鐘內寄達）
+
+> 此 API 完全免費，且有相當寬鬆的使用限制。
+
 ## 安裝設定
 
 ```bash
