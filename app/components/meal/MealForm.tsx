@@ -5,10 +5,12 @@
  *
  * Form for confirming/correcting meal information.
  * Supports both recognition results and manual entry.
+ * Automatically fetches nutrition data with AI fallback.
  */
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useI18n } from '@/lib/i18n';
+import { getNutritionWithAIFallback } from '@/lib/services/nutrition';
 import type { FoodRecognitionResult, MealFormData, NutritionData } from '@/types/meal';
 
 interface MealFormProps {
@@ -21,7 +23,7 @@ interface MealFormProps {
 
 export default function MealForm({
   recognitionResult,
-  nutritionData,
+  nutritionData: initialNutritionData,
   isLoading = false,
   onSubmit,
   onCancel,
@@ -41,6 +43,11 @@ export default function MealForm({
   const [isManualEntry, setIsManualEntry] = useState(false);
   const [showAlternatives, setShowAlternatives] = useState(false);
 
+  // Nutrition state
+  const [nutritionData, setNutritionData] = useState<NutritionData | null>(initialNutritionData || null);
+  const [isLoadingNutrition, setIsLoadingNutrition] = useState(false);
+  const nutritionFetchRef = useRef<string | null>(null);
+
   // Update form when recognition result changes
   useEffect(() => {
     if (recognitionResult) {
@@ -50,6 +57,61 @@ export default function MealForm({
       setShowAlternatives(recognitionResult.confidence < 0.7);
     }
   }, [recognitionResult]);
+
+  // Update nutrition data when passed from parent
+  useEffect(() => {
+    if (initialNutritionData) {
+      setNutritionData(initialNutritionData);
+    }
+  }, [initialNutritionData]);
+
+  // Fetch nutrition data when food name changes (with debounce)
+  useEffect(() => {
+    const trimmedName = foodName.trim();
+
+    // Skip if no food name or if we already have nutrition data for this food
+    if (!trimmedName || trimmedName.length < 2) {
+      return;
+    }
+
+    // Skip if we already fetched for this exact food name
+    if (nutritionFetchRef.current === trimmedName) {
+      return;
+    }
+
+    // Debounce: wait for user to stop typing
+    const timeoutId = setTimeout(async () => {
+      // Skip if food name changed during debounce
+      if (foodName.trim() !== trimmedName) {
+        return;
+      }
+
+      nutritionFetchRef.current = trimmedName;
+      setIsLoadingNutrition(true);
+
+      try {
+        const result = await getNutritionWithAIFallback(trimmedName, portionSize);
+        // Only update if food name hasn't changed
+        if (foodName.trim() === trimmedName) {
+          if (result.success && result.data) {
+            setNutritionData(result.data);
+          } else {
+            setNutritionData(null);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch nutrition data:', error);
+        // Only clear if food name hasn't changed
+        if (foodName.trim() === trimmedName) {
+          setNutritionData(null);
+        }
+      } finally {
+        setIsLoadingNutrition(false);
+      }
+    }, 800); // 800ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [foodName, portionSize]);
 
   const handleSelectAlternative = useCallback((candidate: string) => {
     setFoodName(candidate);
@@ -95,7 +157,7 @@ export default function MealForm({
           value={foodName}
           onChange={(e) => setFoodName(e.target.value)}
           placeholder={t('mealForm.foodNamePlaceholder')}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder:text-gray-400"
           required
           disabled={isLoading}
         />
@@ -156,7 +218,7 @@ export default function MealForm({
           id="portionSize"
           value={portionSize}
           onChange={(e) => setPortionSize(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
           disabled={isLoading}
         >
           {portionOptions.map((option) => (
@@ -169,52 +231,127 @@ export default function MealForm({
 
       {/* Nutrition Display */}
       {nutritionData && (
-        <div className="bg-gray-50 rounded-lg p-4">
-          <h3 className="text-sm font-medium text-gray-700 mb-2">{t('mealForm.nutritionTitle')}</h3>
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-gray-600">{t('mealForm.caloriesLabel')}</span>
-              <span>
-                {nutritionData.calories != null ? (
-                  <>{nutritionData.calories} kcal <span className="text-xs text-gray-400">{t('mealForm.estimated')}</span></>
-                ) : (
-                  <span className="text-gray-400">{t('mealForm.dataMissing')}</span>
-                )}
+        <div className="bg-gray-50 rounded-lg p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-medium text-gray-700">{t('mealForm.nutritionTitle')}</h3>
+            {nutritionData.isAIEstimate && (
+              <span className="text-xs text-purple-600 bg-purple-50 px-2 py-0.5 rounded">
+                {t('mealForm.aiEstimated')}
               </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">{t('mealForm.proteinLabel')}</span>
-              <span>
-                {nutritionData.protein != null ? (
-                  <>{nutritionData.protein}g <span className="text-xs text-gray-400">{t('mealForm.estimated')}</span></>
-                ) : (
-                  <span className="text-gray-400">{t('mealForm.dataMissing')}</span>
-                )}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">{t('mealForm.carbsLabel')}</span>
-              <span>
-                {nutritionData.carbohydrates != null ? (
-                  <>{nutritionData.carbohydrates}g <span className="text-xs text-gray-400">{t('mealForm.estimated')}</span></>
-                ) : (
-                  <span className="text-gray-400">{t('mealForm.dataMissing')}</span>
-                )}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">{t('mealForm.fatsLabel')}</span>
-              <span>
-                {nutritionData.fats != null ? (
-                  <>{nutritionData.fats}g <span className="text-xs text-gray-400">{t('mealForm.estimated')}</span></>
-                ) : (
-                  <span className="text-gray-400">{t('mealForm.dataMissing')}</span>
-                )}
-              </span>
+            )}
+          </div>
+
+          {/* Calories - Prominent display */}
+          <div className="bg-white rounded-lg p-3 text-center">
+            <span className="text-2xl font-bold text-gray-900">
+              {nutritionData.calories != null ? nutritionData.calories : '--'}
+            </span>
+            <span className="text-sm text-gray-600 ml-1">kcal</span>
+          </div>
+
+          {/* Macronutrients */}
+          <div>
+            <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+              {t('mealForm.macronutrientsTitle')}
+            </h4>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">{t('mealForm.proteinLabel')}</span>
+                <span className="text-gray-900 font-medium">{nutritionData.protein != null ? `${nutritionData.protein}g` : '--'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">{t('mealForm.carbsLabel')}</span>
+                <span className="text-gray-900 font-medium">{nutritionData.carbohydrates != null ? `${nutritionData.carbohydrates}g` : '--'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">{t('mealForm.fatsLabel')}</span>
+                <span className="text-gray-900 font-medium">{nutritionData.fats != null ? `${nutritionData.fats}g` : '--'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">{t('mealForm.saturatedFatLabel')}</span>
+                <span className="text-gray-900 font-medium">{nutritionData.saturatedFat != null ? `${nutritionData.saturatedFat}g` : '--'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">{t('mealForm.fiberLabel')}</span>
+                <span className="text-gray-900 font-medium">{nutritionData.fiber != null ? `${nutritionData.fiber}g` : '--'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">{t('mealForm.sugarLabel')}</span>
+                <span className="text-gray-900 font-medium">{nutritionData.sugar != null ? `${nutritionData.sugar}g` : '--'}</span>
+              </div>
             </div>
           </div>
-          {!nutritionData.dataComplete && (
-            <p className="mt-2 text-xs text-amber-600">
+
+          {/* Minerals */}
+          <div>
+            <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+              {t('mealForm.mineralsTitle')}
+            </h4>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">{t('mealForm.sodiumLabel')}</span>
+                <span className="text-gray-900 font-medium">{nutritionData.sodium != null ? `${nutritionData.sodium}mg` : '--'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">{t('mealForm.potassiumLabel')}</span>
+                <span className="text-gray-900 font-medium">{nutritionData.potassium != null ? `${nutritionData.potassium}mg` : '--'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">{t('mealForm.calciumLabel')}</span>
+                <span className="text-gray-900 font-medium">{nutritionData.calcium != null ? `${nutritionData.calcium}mg` : '--'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">{t('mealForm.ironLabel')}</span>
+                <span className="text-gray-900 font-medium">{nutritionData.iron != null ? `${nutritionData.iron}mg` : '--'}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Vitamins */}
+          <div>
+            <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+              {t('mealForm.vitaminsTitle')}
+            </h4>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">{t('mealForm.vitaminALabel')}</span>
+                <span className="text-gray-900 font-medium">{nutritionData.vitaminA != null ? `${nutritionData.vitaminA}μg` : '--'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">{t('mealForm.vitaminCLabel')}</span>
+                <span className="text-gray-900 font-medium">{nutritionData.vitaminC != null ? `${nutritionData.vitaminC}mg` : '--'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">{t('mealForm.vitaminDLabel')}</span>
+                <span className="text-gray-900 font-medium">{nutritionData.vitaminD != null ? `${nutritionData.vitaminD}μg` : '--'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">{t('mealForm.vitaminB12Label')}</span>
+                <span className="text-gray-900 font-medium">{nutritionData.vitaminB12 != null ? `${nutritionData.vitaminB12}μg` : '--'}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Other */}
+          <div>
+            <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+              {t('mealForm.otherNutrientsTitle')}
+            </h4>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">{t('mealForm.cholesterolLabel')}</span>
+                <span className="text-gray-900 font-medium">{nutritionData.cholesterol != null ? `${nutritionData.cholesterol}mg` : '--'}</span>
+              </div>
+            </div>
+          </div>
+
+          {nutritionData.isAIEstimate && (
+            <p className="text-xs text-purple-600">
+              {t('mealForm.aiEstimateNote')}
+            </p>
+          )}
+          {!nutritionData.dataComplete && !nutritionData.isAIEstimate && (
+            <p className="text-xs text-amber-600">
               {t('mealForm.partialNutritionWarning')}
             </p>
           )}
@@ -222,7 +359,7 @@ export default function MealForm({
       )}
 
       {/* Loading indicator for nutrition */}
-      {isLoading && !nutritionData && (
+      {isLoadingNutrition && !nutritionData && (
         <div className="bg-gray-50 rounded-lg p-4 flex items-center justify-center">
           <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-500 border-t-transparent mr-2" />
           <span className="text-sm text-gray-600">{t('mealForm.loadingNutrition')}</span>

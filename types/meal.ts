@@ -76,12 +76,34 @@ export enum RecognitionError {
  * Nutrition data structure.
  */
 export interface NutritionData {
+  // Macronutrients
   calories?: number;
   protein?: number;                   // in grams
   carbohydrates?: number;             // in grams
   fats?: number;                      // in grams
-  sourceDatabase: string;             // "USDA FoodData Central"
+  fiber?: number;                     // in grams
+  sugar?: number;                     // in grams
+  saturatedFat?: number;              // in grams
+
+  // Minerals
+  sodium?: number;                    // in milligrams
+  potassium?: number;                 // in milligrams
+  calcium?: number;                   // in milligrams
+  iron?: number;                      // in milligrams
+
+  // Vitamins
+  vitaminA?: number;                  // in micrograms (RAE)
+  vitaminC?: number;                  // in milligrams
+  vitaminD?: number;                  // in micrograms
+  vitaminB12?: number;                // in micrograms
+
+  // Other
+  cholesterol?: number;               // in milligrams
+
+  // Metadata
+  sourceDatabase: string;             // "USDA FoodData Central" or "AI Estimate (OpenAI)"
   dataComplete: boolean;              // true if all values present
+  isAIEstimate?: boolean;             // true if nutrition was estimated by AI
 }
 
 /**

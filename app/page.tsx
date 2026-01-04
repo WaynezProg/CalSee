@@ -30,7 +30,7 @@ import {
 } from '@/lib/db/indexeddb';
 import type { FoodRecognitionResult, MealFormData, Photo, Meal } from '@/types/meal';
 
-type WorkflowStep = 'capture' | 'processing' | 'confirm' | 'success' | 'error';
+type WorkflowStep = 'capture' | 'processing' | 'confirm' | 'manualEntry' | 'success' | 'error';
 
 export default function Home() {
   const { t } = useI18n();
@@ -111,21 +111,38 @@ export default function Home() {
         setRecognitionResult(result.data);
         setStep('confirm');
       } else {
-        // Recognition failed - allow manual entry
+        // Recognition failed - stay on processing step and show error with retry option
         setRecognitionResult(null);
-        setStep('confirm');
-        if (result.error?.code !== 'NO_FOOD_DETECTED') {
+        if (result.error?.code === 'NO_FOOD_DETECTED') {
+          // No food detected - go to confirm for manual entry
+          setStep('confirm');
+        } else {
+          // Other errors (timeout, network) - allow retry
           setError(result.error?.message || t('errors.recognitionFailedManual'));
         }
       }
     } catch (err) {
       console.error('Recognition error:', err);
       setError(t('errors.recognitionErrorManual'));
-      setStep('confirm');
     } finally {
       setIsRecognizing(false);
     }
   }, [t]);
+
+  // Handle retry recognition
+  const handleRetryRecognition = useCallback(() => {
+    if (photoBlob) {
+      setError(null);
+      startRecognition(photoBlob);
+    }
+  }, [photoBlob, startRecognition]);
+
+  // Handle skip to manual entry from processing
+  const handleSkipToManual = useCallback(() => {
+    setError(null);
+    setRecognitionResult(null);
+    setStep('confirm');
+  }, []);
 
   // Handle consent accepted
   const handleConsentAccept = useCallback(async () => {
@@ -161,11 +178,6 @@ export default function Home() {
 
   // Handle form submit
   const handleFormSubmit = useCallback(async (formData: MealFormData) => {
-    if (!photoBlob) {
-      setError(t('errors.missingPhoto'));
-      return;
-    }
-
     try {
       // Check storage limit
       const isApproachingLimit = await isStorageApproachingLimit();
@@ -174,24 +186,27 @@ export default function Home() {
         return;
       }
 
-      const photoId = uuidv4();
       const mealId = uuidv4();
       const now = new Date();
+      let photoId: string | undefined;
 
-      // Save photo
-      const photo: Photo = {
-        photoId,
-        blob: photoBlob,
-        mimeType: 'image/jpeg',
-        width: photoWidth,
-        height: photoHeight,
-      };
-      await addPhoto(photo);
+      // Save photo if exists
+      if (photoBlob) {
+        photoId = uuidv4();
+        const photo: Photo = {
+          photoId,
+          blob: photoBlob,
+          mimeType: 'image/jpeg',
+          width: photoWidth,
+          height: photoHeight,
+        };
+        await addPhoto(photo);
+      }
 
       // Save meal
       const meal: Meal = {
         id: mealId,
-        photoId,
+        photoId: photoId || '',
         foodName: formData.foodName,
         portionSize: formData.portionSize,
         calories: formData.calories,
@@ -202,7 +217,7 @@ export default function Home() {
         nutritionDataComplete: !!(formData.calories && formData.protein && formData.carbohydrates && formData.fats),
         createdAt: now,
         updatedAt: now,
-        isManualEntry: formData.isManualEntry,
+        isManualEntry: formData.isManualEntry || !photoBlob,
       };
       await addMeal(meal);
 
@@ -248,6 +263,17 @@ export default function Home() {
     setError(errorMessage);
   }, []);
 
+  // Handle manual entry (without photo)
+  const handleManualEntry = useCallback(() => {
+    setPhotoBlob(null);
+    setPhotoWidth(0);
+    setPhotoHeight(0);
+    setPhotoPreviewUrl(null);
+    setRecognitionResult(null);
+    setError(null);
+    setStep('manualEntry');
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -286,15 +312,63 @@ export default function Home() {
               onImageCaptured={handleImageCaptured}
               onError={handleImageError}
             />
+            <div className="text-center pt-4 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={handleManualEntry}
+                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+              >
+                {t('home.manualEntryButton')}
+              </button>
+            </div>
           </div>
         )}
 
         {/* Step: Processing */}
         {step === 'processing' && (
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto mb-4" />
-            <p className="text-gray-600">{t('home.processingTitle')}</p>
-            <p className="text-sm text-gray-400 mt-2">{t('home.processingNotice')}</p>
+            {isRecognizing ? (
+              <>
+                <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto mb-4" />
+                <p className="text-gray-600">{t('home.processingTitle')}</p>
+                <p className="text-sm text-gray-400 mt-2">{t('home.processingNotice')}</p>
+              </>
+            ) : (
+              <>
+                {/* Photo Preview */}
+                {photoPreviewUrl && (
+                  <div className="mb-6">
+                    <img
+                      src={photoPreviewUrl}
+                      alt={t('home.photoAlt')}
+                      className="w-full max-h-48 object-contain rounded-lg mx-auto"
+                    />
+                  </div>
+                )}
+
+                {/* Retry and Skip buttons */}
+                <div className="flex flex-col gap-3 max-w-xs mx-auto">
+                  <button
+                    onClick={handleRetryRecognition}
+                    className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  >
+                    {t('home.retryRecognition')}
+                  </button>
+                  <button
+                    onClick={handleSkipToManual}
+                    className="w-full px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    {t('home.skipToManual')}
+                  </button>
+                  <button
+                    onClick={handleCancel}
+                    className="w-full px-6 py-2 text-gray-500 hover:text-gray-700 transition-colors text-sm"
+                  >
+                    {t('mealForm.cancel')}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -319,6 +393,22 @@ export default function Home() {
             <MealForm
               recognitionResult={recognitionResult}
               isLoading={isRecognizing}
+              onSubmit={handleFormSubmit}
+              onCancel={handleCancel}
+            />
+          </div>
+        )}
+
+        {/* Step: Manual Entry (no photo) */}
+        {step === 'manualEntry' && (
+          <div className="space-y-4">
+            <div className="text-center mb-4">
+              <h2 className="text-lg font-medium text-gray-900">{t('home.manualEntryButton')}</h2>
+            </div>
+
+            <MealForm
+              recognitionResult={null}
+              isLoading={false}
               onSubmit={handleFormSubmit}
               onCancel={handleCancel}
             />

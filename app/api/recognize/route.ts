@@ -163,7 +163,7 @@ async function callOpenAIVision(
   apiKey: string
 ): Promise<RecognitionResponse> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 3000);
+  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 seconds
 
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -299,7 +299,7 @@ async function callGoogleVision(
   apiKey: string
 ): Promise<RecognitionResponse> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 3000);
+  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 seconds
 
   try {
     // Extract base64 data from data URL

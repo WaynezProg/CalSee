@@ -9,7 +9,7 @@ import type { FoodRecognitionResult, RecognitionApiResponse, RecognitionError } 
 import { blobToDataUrl } from '@/lib/utils/image-compression';
 import { translate } from '@/lib/i18n';
 
-const API_TIMEOUT = 3000; // 3 seconds
+const API_TIMEOUT = 15000; // 15 seconds
 
 interface RecognitionServiceResult {
   success: boolean;
