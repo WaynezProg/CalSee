@@ -5,6 +5,7 @@
   },
   "app": {
     "name": "CalSee",
+    "subtitle": "飲食記錄",
     "tagline": "記錄每一餐的美好"
   },
   "bottomNav": {

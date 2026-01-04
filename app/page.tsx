@@ -11,6 +11,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import AppLayout from '@/app/components/layout/AppLayout';
+import AppLogo from '@/app/components/ui/AppLogo';
 import { useI18n } from '@/lib/i18n';
 import { getAllMeals, getPhoto } from '@/lib/db/indexeddb';
 import type { Meal } from '@/types/meal';
@@ -135,14 +136,7 @@ export default function Home() {
       <header className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
         <div className="max-w-lg mx-auto px-4 pt-8 pb-12">
           <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold">{t('app.name')}</h1>
-              {userName && (
-                <p className="text-blue-100 text-sm mt-1">
-                  {userName}
-                </p>
-              )}
-            </div>
+            <AppLogo />
             {session?.user?.image ? (
               <img
                 src={session.user.image}
