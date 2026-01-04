@@ -170,10 +170,12 @@ export async function getAINutritionEstimate(
   portionSize?: string
 ): Promise<NutritionServiceResult> {
   const normalizedName = foodName.toLowerCase().trim();
+  const normalizedPortion = portionSize?.toLowerCase().trim() || 'default';
+  const cacheKey = `ai:${normalizedName}:${normalizedPortion}`;
 
   // Check cache first (AI estimates are also cached)
   try {
-    const cached = await getCachedNutrition(`ai:${normalizedName}`);
+    const cached = await getCachedNutrition(cacheKey);
     if (cached) {
       return {
         success: true,
@@ -215,7 +217,7 @@ export async function getAINutritionEstimate(
           expiresAt.setDate(expiresAt.getDate() + CACHE_TTL_DAYS);
 
           const cacheEntry: CachedNutritionData = {
-            foodName: `ai:${normalizedName}`,
+            foodName: cacheKey,
             nutritionData: result.data,
             cachedAt: now,
             expiresAt,

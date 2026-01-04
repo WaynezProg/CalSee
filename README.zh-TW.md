@@ -5,7 +5,9 @@ CalSee 是一個以 Next.js 開發的概念驗證專案，讓使用者透過拍�
 ## 功能特色
 
 - 拍照或上傳照片，支援客戶端壓縮
-- AI 食物辨識（透過伺服器端 API 路由，需要使用者同意）
+- **多項目食物辨識** — AI 可從單張照片辨識多個食物項目（1-6 項）
+- 使用 React Query 進行漸進式營養資料查詢，支援平行載入
+- 食物項目內嵌編輯，可自訂份量大小與單位
 - 營養資料查詢，支援客戶端快取，USDA 無資料時以 AI 補足
 - 僅本地儲存（IndexedDB），包含照片 Blob、營養快取與同意狀態
 - 選用 Google 登入（NextAuth，JWT Session）
@@ -15,6 +17,7 @@ CalSee 是一個以 Next.js 開發的概念驗證專案，讓使用者透過拍�
 ## 技術架構
 
 - Next.js App Router、React、TypeScript
+- React Query（TanStack Query）用於資料擷取與快取
 - NextAuth.js（Google OAuth）
 - IndexedDB（原生 API）
 - Tailwind CSS
@@ -103,22 +106,28 @@ app/
   (auth)/           # 登入與錯誤頁
   api/              # 辨識、營養與登入的伺服器端路由
   add/              # 新增飲食流程
-  components/       # UI 元件
+  components/
+    meals/          # 飲食相關元件（MealItemList、MultiItemMealForm 等）
+    providers/      # React Query 與其他 Provider
+    ui/             # 共用 UI 元件
   history/          # 飲食記錄頁面
   settings/         # 設定與隱私
   page.tsx          # 首頁儀表板
 lib/
   db/               # IndexedDB 輔助函式
   i18n/             # 國際化工具與訊息
+  nutrition/        # 營養查詢與 React Query hooks
   services/         # 客戶端 API 服務
   utils/            # 工具程式（圖片壓縮等）
-types/              # 共用 TypeScript 型別
+types/              # 共用 TypeScript 型別（MealItem、Meal、辨識型別）
 ```
 
 ## 注意事項
 
 - 所有飲食資料與照片皆儲存在瀏覽器本地（無帳號系統或雲端同步）。
 - 雲端辨識需要使用者明確同意，並透過伺服器端 API 路由處理以保護 API 金鑰。
+- 多項目辨識支援每張照片 1-6 個食物項目，並提供信心分數。
+- 營養資料使用 React Query 平行載入，逐步顯示結果。
 - AI 營養補足在使用 OpenAI 時，會沿用 `RECOGNITION_API_KEY`。
 
 ## 授權條款

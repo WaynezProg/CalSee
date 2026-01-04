@@ -145,16 +145,17 @@ export function MealHistory() {
 
   const handleTogglePhoto = async (meal: MealWithThumbnail) => {
     if (!meal.id) return;
+    const mealId = meal.id;
     const expiresAt = meal.fullPhotoExpiresAt ? new Date(meal.fullPhotoExpiresAt) : null;
     const isExpired = !expiresAt || expiresAt.getTime() <= Date.now();
 
     if (!meal.fullPhotoUrl || isExpired) {
-      setPhotoLoadingIds(prev => ({ ...prev, [meal.id]: true }));
+      setPhotoLoadingIds(prev => ({ ...prev, [mealId]: true }));
       await handleLoadFullPhoto(meal);
-      setPhotoLoadingIds(prev => ({ ...prev, [meal.id]: false }));
+      setPhotoLoadingIds(prev => ({ ...prev, [mealId]: false }));
     }
 
-    setExpandedMeals(prev => ({ ...prev, [meal.id]: !prev[meal.id] }));
+    setExpandedMeals(prev => ({ ...prev, [mealId]: !prev[mealId] }));
   };
 
   const handleDeleteMeal = async (meal: MealWithThumbnail) => {
@@ -213,11 +214,15 @@ export function MealHistory() {
 
       <ul className="space-y-3">
         {meals.map(meal => {
-          const isExpanded = !!expandedMeals[meal.id];
-          const isPhotoLoading = !!photoLoadingIds[meal.id];
+          if (!meal.id) {
+            return null;
+          }
+          const mealId = meal.id;
+          const isExpanded = !!expandedMeals[mealId];
+          const isPhotoLoading = !!photoLoadingIds[mealId];
           return (
             <li
-              key={meal.id}
+              key={mealId}
               className="rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm transition hover:border-slate-300"
             >
               <div className="flex gap-4">

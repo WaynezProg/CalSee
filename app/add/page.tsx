@@ -14,22 +14,14 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { v4 as uuidv4 } from 'uuid';
 import AppLayout from '@/app/components/layout/AppLayout';
 import CameraCapture from '@/app/components/camera/CameraCapture';
-import MealForm from '@/app/components/meal/MealForm';
-import { MealForm as SyncMealForm } from '@/app/components/meals/MealForm';
+import { MultiItemMealForm } from '@/app/components/meals/MultiItemMealForm';
 import ConsentDialog, { CONSENT_VERSION } from '@/app/components/ui/ConsentDialog';
 import { useI18n } from '@/lib/i18n';
-import { recognizeFoodWithRetry } from '@/lib/services/recognition';
-import {
-  addMeal,
-  addPhoto,
-  getCloudRecognitionConsent,
-  saveCloudRecognitionConsent,
-  isStorageApproachingLimit,
-} from '@/lib/db/indexeddb';
-import type { FoodRecognitionResult, MealFormData, Photo, Meal } from '@/types/meal';
+import { recognizeMultipleFoodWithRetry } from '@/lib/services/recognition';
+import { getCloudRecognitionConsent, saveCloudRecognitionConsent } from '@/lib/db/indexeddb';
+import type { MultiItemRecognitionResponse } from '@/types/recognition';
 
 type WorkflowStep = 'capture' | 'processing' | 'confirm' | 'manualEntry' | 'success';
 
@@ -43,12 +35,12 @@ export default function AddMealPage() {
 
   // Photo state
   const [photoBlob, setPhotoBlob] = useState<Blob | null>(null);
-  const [photoWidth, setPhotoWidth] = useState(0);
-  const [photoHeight, setPhotoHeight] = useState(0);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
 
   // Recognition state
-  const [recognitionResult, setRecognitionResult] = useState<FoodRecognitionResult | null>(null);
+  const [recognitionResult, setRecognitionResult] =
+    useState<MultiItemRecognitionResponse | null>(null);
   const [isRecognizing, setIsRecognizing] = useState(false);
 
   // Consent state
@@ -85,10 +77,13 @@ export default function AddMealPage() {
   }, [photoBlob]);
 
   // Handle image captured
-  const handleImageCaptured = useCallback((blob: Blob, width: number, height: number) => {
+  const handleImageCaptured = useCallback((blob: Blob) => {
     setPhotoBlob(blob);
-    setPhotoWidth(width);
-    setPhotoHeight(height);
+    setPhotoFile(
+      new File([blob], `meal-${Date.now()}.jpg`, {
+        type: blob.type || 'image/jpeg',
+      })
+    );
     setError(null);
 
     // Check if we need consent
@@ -108,7 +103,7 @@ export default function AddMealPage() {
     setError(null);
 
     try {
-      const result = await recognizeFoodWithRetry(blob, true);
+      const result = await recognizeMultipleFoodWithRetry(blob, true);
 
       if (result.success && result.data) {
         setRecognitionResult(result.data);
@@ -179,69 +174,16 @@ export default function AddMealPage() {
     setStep('confirm');
   }, []);
 
-  // Handle form submit
-  const handleFormSubmit = useCallback(async (formData: MealFormData) => {
-    try {
-      // Check storage limit
-      const isApproachingLimit = await isStorageApproachingLimit();
-      if (isApproachingLimit) {
-        setError(t('errors.storageLow'));
-        return;
-      }
-
-      const mealId = uuidv4();
-      const now = new Date();
-      let photoId: string | undefined;
-
-      // Save photo if exists
-      if (photoBlob) {
-        photoId = uuidv4();
-        const photo: Photo = {
-          photoId,
-          blob: photoBlob,
-          mimeType: 'image/jpeg',
-          width: photoWidth,
-          height: photoHeight,
-        };
-        await addPhoto(photo);
-      }
-
-      // Save meal
-      const meal: Meal = {
-        id: mealId,
-        photoId: photoId || '',
-        foodName: formData.foodName,
-        portionSize: formData.portionSize,
-        calories: formData.calories,
-        protein: formData.protein,
-        carbohydrates: formData.carbohydrates,
-        fats: formData.fats,
-        recognitionConfidence: recognitionResult?.confidence ?? 0,
-        nutritionDataComplete: !!(formData.calories && formData.protein && formData.carbohydrates && formData.fats),
-        createdAt: now,
-        updatedAt: now,
-        isManualEntry: formData.isManualEntry || !photoBlob,
-      };
-      await addMeal(meal);
-
-      setStep('success');
-    } catch (err) {
-      console.error('Failed to save meal:', err);
-      if (err instanceof Error && err.name === 'QuotaExceededError') {
-        setError(t('errors.storageFull'));
-      } else {
-        setError(t('errors.saveFailed'));
-      }
-    }
-  }, [photoBlob, photoWidth, photoHeight, recognitionResult, t]);
+  const handleSubmitSuccess = useCallback(() => {
+    setStep('success');
+  }, []);
 
   // Handle cancel
   const handleCancel = useCallback(() => {
     setStep('capture');
     setPhotoBlob(null);
-    setPhotoWidth(0);
-    setPhotoHeight(0);
     setPhotoPreviewUrl(null);
+    setPhotoFile(null);
     setRecognitionResult(null);
     setError(null);
   }, []);
@@ -250,9 +192,8 @@ export default function AddMealPage() {
   const handleNewMeal = useCallback(() => {
     setStep('capture');
     setPhotoBlob(null);
-    setPhotoWidth(0);
-    setPhotoHeight(0);
     setPhotoPreviewUrl(null);
+    setPhotoFile(null);
     setRecognitionResult(null);
     setError(null);
   }, []);
@@ -265,9 +206,8 @@ export default function AddMealPage() {
   // Handle manual entry (without photo)
   const handleManualEntry = useCallback(() => {
     setPhotoBlob(null);
-    setPhotoWidth(0);
-    setPhotoHeight(0);
     setPhotoPreviewUrl(null);
+    setPhotoFile(null);
     setRecognitionResult(null);
     setError(null);
     setStep('manualEntry');
@@ -380,10 +320,11 @@ export default function AddMealPage() {
               </div>
             )}
 
-            <MealForm
+            <MultiItemMealForm
               recognitionResult={recognitionResult}
+              photoFile={photoFile}
               isLoading={isRecognizing}
-              onSubmit={handleFormSubmit}
+              onSubmitSuccess={handleSubmitSuccess}
               onCancel={handleCancel}
             />
           </div>
@@ -396,10 +337,11 @@ export default function AddMealPage() {
               <h2 className="text-lg font-medium text-slate-800">{t('home.manualEntryButton')}</h2>
             </div>
 
-            <MealForm
+            <MultiItemMealForm
               recognitionResult={null}
+              photoFile={null}
               isLoading={false}
-              onSubmit={handleFormSubmit}
+              onSubmitSuccess={handleSubmitSuccess}
               onCancel={handleCancel}
             />
           </div>
@@ -442,15 +384,6 @@ export default function AddMealPage() {
           </div>
         )}
 
-        <section className="mt-10 border-t border-slate-200 pt-6">
-          <h2 className="text-lg font-semibold text-slate-800">Sync meal (multi-item)</h2>
-          <p className="mt-1 text-sm text-slate-500">
-            Prototype form for multi-item meals with cloud sync.
-          </p>
-          <div className="mt-4">
-            <SyncMealForm />
-          </div>
-        </section>
       </main>
 
       {/* Consent Dialog */}

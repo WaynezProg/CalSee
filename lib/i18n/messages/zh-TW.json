@@ -51,6 +51,9 @@
     "recognitionParseFailed": "辨識結果解析失敗",
     "noFoodDetected": "無法辨識圖片中的食物",
     "recognitionTimeout": "辨識超時，請稍後再試",
+    "invalidJson": "辨識回應格式錯誤",
+    "validationError": "辨識結果驗證失敗",
+    "invalidLocale": "不支援的語言設定",
     "consentSaveFailed": "儲存同意狀態失敗",
     "missingPhoto": "缺少照片資料",
     "storageLow": "儲存空間不足，請刪除舊的飲食記錄後再試",
@@ -118,6 +121,9 @@
     "loadingNutrition": "載入營養資訊中...",
     "cancel": "取消",
     "save": "儲存",
+    "saving": "儲存中...",
+    "noItemsError": "請至少輸入一個食物項目",
+    "syncFailed": "同步失敗，將在背景重試",
     "portionOptions": {
       "halfValue": "0.5 份",
       "halfLabel": "半份",
@@ -133,6 +139,24 @@
       "plateLabel": "1 盤",
       "cupValue": "1 杯",
       "cupLabel": "1 杯"
+    },
+    "items": {
+      "detected": "偵測到 {count} 個項目",
+      "noItems": "未偵測到食物",
+      "add": "新增項目",
+      "delete": "刪除",
+      "edit": "編輯",
+      "confirmDelete": "確定要刪除此項目嗎？",
+      "atLeastOneRequired": "至少需要一個項目",
+      "insufficientData": "資料不足",
+      "loading": "載入中..."
+    },
+    "totalNutrition": {
+      "title": "總營養",
+      "calories": "總熱量",
+      "protein": "總蛋白質",
+      "carbs": "總碳水化合物",
+      "fat": "總脂肪"
     }
   },
   "mealHistory": {

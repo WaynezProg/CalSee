@@ -5,7 +5,9 @@ CalSee is a Next.js proof-of-concept for logging meals by photo. It compresses i
 ## Features
 
 - Photo capture or upload with client-side compression
-- AI food recognition via server-side API route (consent required)
+- **Multi-item food recognition** - AI can recognize multiple food items (1-6) in a single photo
+- Progressive nutrition lookup with React Query for parallel fetching
+- Inline editing of food items with portion size and unit customization
 - Nutrition lookup with client-side caching and AI fallback when USDA is missing data
 - Local-only storage (IndexedDB) with photo blobs, nutrition cache, and consent
 - Optional Google sign-in via NextAuth (JWT session)
@@ -15,6 +17,7 @@ CalSee is a Next.js proof-of-concept for logging meals by photo. It compresses i
 ## Tech Stack
 
 - Next.js App Router, React, TypeScript
+- React Query (TanStack Query) for data fetching and caching
 - NextAuth.js (Google OAuth)
 - IndexedDB (native API)
 - Tailwind CSS
@@ -103,22 +106,28 @@ app/
   (auth)/           # Sign-in and error pages
   api/              # Server routes for recognition, nutrition, and auth
   add/              # Add meal flow
-  components/       # UI components
+  components/
+    meals/          # Meal-related components (MealItemList, MultiItemMealForm, etc.)
+    providers/      # React Query and other providers
+    ui/             # Shared UI components
   history/          # Meal history page
   settings/         # Settings and privacy controls
   page.tsx          # Home dashboard
 lib/
   db/               # IndexedDB helpers
   i18n/             # i18n utilities and messages
+  nutrition/        # Nutrition lookup with React Query hooks
   services/         # Client API services
   utils/            # Utilities (image compression, etc.)
-types/              # Shared TypeScript types
+types/              # Shared TypeScript types (MealItem, Meal, recognition types)
 ```
 
 ## Notes
 
 - All meal data and photos are stored locally in the browser (no accounts or cloud sync).
 - Cloud recognition requires explicit consent and is handled via server-side API routes to protect keys.
+- Multi-item recognition supports 1-6 food items per photo with confidence scores.
+- Nutrition data is fetched progressively in parallel using React Query.
 - AI nutrition fallback uses the same `RECOGNITION_API_KEY` when OpenAI is selected.
 
 ## License

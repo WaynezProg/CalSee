@@ -1,34 +1,32 @@
 /**
- * Food Recognition API Route
+ * Multi-item Food Recognition API Route
+ * Based on Spec 003 - Multi-item Recognition
  *
  * POST /api/recognize
  *
- * Accepts an image and returns food recognition results.
+ * Accepts an image and returns multi-item food recognition results.
  * Server-side route to protect API keys.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { translate } from '@/lib/i18n';
+import { createOpenAIProvider } from '@/lib/recognition/provider/openai';
+import { createGeminiProvider } from '@/lib/recognition/provider/gemini';
+import type { RecognitionProvider } from '@/lib/recognition/provider/base';
+import { parseAndValidate, truncateItems } from '@/lib/recognition/parser';
+import {
+  type RecognitionApiRequest,
+  type MultiItemRecognitionApiResponse,
+  type RecognitionItem,
+  type SupportedLocale,
+  DEFAULT_LOCALE,
+  isSupportedLocale,
+  MultiItemRecognitionError,
+} from '@/types/recognition';
 
-interface RecognitionRequest {
-  image: string; // Base64-encoded image data
-  consent: boolean; // User consent for cloud processing
-}
-
-interface RecognitionResponse {
-  success: boolean;
-  data?: {
-    primaryCandidate: string;
-    confidence: number;
-    alternativeCandidates?: string[];
-    components?: string[];
-  };
-  error?: {
-    code: string;
-    message: string;
-  };
-}
-
+/**
+ * Log event structure for recognition requests.
+ */
 interface RecognitionLogEvent {
   event: 'recognition_request';
   requestId: string;
@@ -36,12 +34,15 @@ interface RecognitionLogEvent {
   success: boolean;
   status: number;
   errorCode?: string;
-  confidence?: number;
-  alternativeCount?: number;
+  itemCount?: number;
+  locale: string;
   processingTimeMs: number;
   timestamp: string;
 }
 
+/**
+ * Log recognition events.
+ */
 function logRecognitionEvent(event: RecognitionLogEvent) {
   const payload = JSON.stringify(event);
   if (event.success) {
@@ -51,21 +52,53 @@ function logRecognitionEvent(event: RecognitionLogEvent) {
   }
 }
 
-export async function POST(request: NextRequest): Promise<NextResponse<RecognitionResponse>> {
+/**
+ * Map error code to translated message.
+ */
+function getErrorMessage(code: MultiItemRecognitionError): string {
+  const messageMap: Record<MultiItemRecognitionError, string> = {
+    [MultiItemRecognitionError.CONSENT_REQUIRED]: translate('errors.consentRequired'),
+    [MultiItemRecognitionError.INVALID_IMAGE]: translate('errors.invalidImage'),
+    [MultiItemRecognitionError.NO_FOOD_DETECTED]: translate('errors.noFoodDetected'),
+    [MultiItemRecognitionError.TIMEOUT]: translate('errors.recognitionTimeout'),
+    [MultiItemRecognitionError.INVALID_JSON]: translate('errors.invalidJson'),
+    [MultiItemRecognitionError.VALIDATION_ERROR]: translate('errors.validationError'),
+    [MultiItemRecognitionError.INVALID_LOCALE]: translate('errors.invalidLocale'),
+    [MultiItemRecognitionError.NETWORK_ERROR]: translate('errors.networkError'),
+    [MultiItemRecognitionError.API_ERROR]: translate('errors.recognitionFailed'),
+  };
+  return messageMap[code] || translate('errors.recognitionFailed');
+}
+
+function shouldFallback(code: MultiItemRecognitionError): boolean {
+  return (
+    code === MultiItemRecognitionError.API_ERROR ||
+    code === MultiItemRecognitionError.TIMEOUT ||
+    code === MultiItemRecognitionError.INVALID_JSON ||
+    code === MultiItemRecognitionError.VALIDATION_ERROR ||
+    code === MultiItemRecognitionError.NETWORK_ERROR
+  );
+}
+
+export async function POST(
+  request: NextRequest
+): Promise<NextResponse<MultiItemRecognitionApiResponse>> {
   const requestId = crypto.randomUUID();
   const startTime = Date.now();
-  const apiType = process.env.RECOGNITION_API_TYPE || 'openai';
+  const preferredApiType = process.env.RECOGNITION_API_TYPE || 'gemini';
+  let apiType = preferredApiType;
   let status = 200;
-  let response: RecognitionResponse = {
+  let locale: SupportedLocale = DEFAULT_LOCALE;
+  let response: MultiItemRecognitionApiResponse = {
     success: false,
     error: {
-      code: 'API_ERROR',
+      code: MultiItemRecognitionError.API_ERROR,
       message: translate('errors.recognitionFailed'),
     },
   };
 
   try {
-    const body: RecognitionRequest = await request.json();
+    const body: RecognitionApiRequest = await request.json();
 
     // Validate consent
     if (!body.consent) {
@@ -73,8 +106,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<Recogniti
       response = {
         success: false,
         error: {
-          code: 'CONSENT_REQUIRED',
-          message: translate('errors.consentRequired'),
+          code: MultiItemRecognitionError.CONSENT_REQUIRED,
+          message: getErrorMessage(MultiItemRecognitionError.CONSENT_REQUIRED),
         },
       };
       return NextResponse.json(response, { status });
@@ -86,45 +119,161 @@ export async function POST(request: NextRequest): Promise<NextResponse<Recogniti
       response = {
         success: false,
         error: {
-          code: 'INVALID_IMAGE',
-          message: translate('errors.invalidImage'),
+          code: MultiItemRecognitionError.INVALID_IMAGE,
+          message: getErrorMessage(MultiItemRecognitionError.INVALID_IMAGE),
         },
       };
       return NextResponse.json(response, { status });
     }
 
-    // Check API key configuration
-    const apiKey = process.env.RECOGNITION_API_KEY;
+    // Validate and set locale
+    if (body.locale) {
+      if (isSupportedLocale(body.locale)) {
+        locale = body.locale;
+      } else {
+        // Log warning but default to zh-TW
+        console.warn(`Invalid locale "${body.locale}", defaulting to ${DEFAULT_LOCALE}`);
+        locale = DEFAULT_LOCALE;
+      }
+    }
 
-    if (!apiKey) {
-      console.error('Recognition API key not configured');
+    const openAiKey = process.env.RECOGNITION_API_KEY;
+    const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+
+    if (!openAiKey && !geminiKey) {
+      console.error('Recognition API keys not configured');
       status = 500;
       response = {
         success: false,
         error: {
-          code: 'API_ERROR',
+          code: MultiItemRecognitionError.API_ERROR,
           message: translate('errors.recognitionUnavailable'),
         },
       };
       return NextResponse.json(response, { status });
     }
 
-    // Call external recognition API based on type
-    const result = apiType === 'openai'
-      ? await callOpenAIVision(body.image, apiKey)
-      : await callGoogleVision(body.image, apiKey);
+    const providers: Array<{ name: string; handler: RecognitionProvider }> = [];
+    const orderedTypes = preferredApiType === 'openai' ? ['openai', 'gemini'] : ['gemini', 'openai'];
 
-    response = result;
-
-    if (!result.success) {
-      const errorCode = result.error?.code;
-      if (errorCode === 'CONSENT_REQUIRED' || errorCode === 'INVALID_IMAGE') {
-        status = 400;
-      } else if (errorCode === 'API_ERROR' || errorCode === 'TIMEOUT') {
-        status = 500;
+    for (const type of orderedTypes) {
+      if (type === 'gemini' && geminiKey) {
+        providers.push({
+          name: 'gemini',
+          handler: createGeminiProvider({ apiKey: geminiKey, timeout: 30000 }),
+        });
+      }
+      if (type === 'openai' && openAiKey) {
+        providers.push({
+          name: 'openai',
+          handler: createOpenAIProvider({ apiKey: openAiKey, timeout: 30000 }),
+        });
       }
     }
 
+    if (providers.length === 0) {
+      console.error('No recognition providers available');
+      status = 500;
+      response = {
+        success: false,
+        error: {
+          code: MultiItemRecognitionError.API_ERROR,
+          message: translate('errors.recognitionUnavailable'),
+        },
+      };
+      return NextResponse.json(response, { status });
+    }
+
+    let lastErrorCode: MultiItemRecognitionError | undefined;
+
+    for (const provider of providers) {
+      apiType = provider.name;
+      const providerResponse = await provider.handler.getJsonResponse(body.image, locale);
+
+      if (!providerResponse.success || !providerResponse.rawJson) {
+        const errorCode =
+          (providerResponse.error?.code as MultiItemRecognitionError) ||
+          MultiItemRecognitionError.API_ERROR;
+
+        if (shouldFallback(errorCode)) {
+          lastErrorCode = errorCode;
+          continue;
+        }
+
+        status = errorCode === MultiItemRecognitionError.INVALID_IMAGE
+          ? 400
+          : errorCode === MultiItemRecognitionError.TIMEOUT
+            ? 504
+            : 500;
+        response = {
+          success: false,
+          error: {
+            code: errorCode,
+            message: getErrorMessage(errorCode),
+          },
+        };
+        return NextResponse.json(response, { status });
+      }
+
+      const parseResult = parseAndValidate(providerResponse.rawJson);
+
+      if (!parseResult.success || !parseResult.data) {
+        const errorCode =
+          (parseResult.error?.code as MultiItemRecognitionError) ||
+          MultiItemRecognitionError.VALIDATION_ERROR;
+
+        if (shouldFallback(errorCode)) {
+          lastErrorCode = errorCode;
+          continue;
+        }
+
+        status = 500;
+        response = {
+          success: false,
+          error: {
+            code: errorCode,
+            message: getErrorMessage(errorCode),
+          },
+        };
+        return NextResponse.json(response, { status });
+      }
+
+      // Truncate items if more than 6 (per FR-001)
+      const items: RecognitionItem[] = truncateItems(parseResult.data.items, 6);
+
+      // Check for empty items
+      if (items.length === 0) {
+        status = 200; // Still a valid response, just no food detected
+        response = {
+          success: false,
+          error: {
+            code: MultiItemRecognitionError.NO_FOOD_DETECTED,
+            message: getErrorMessage(MultiItemRecognitionError.NO_FOOD_DETECTED),
+          },
+        };
+        return NextResponse.json(response, { status });
+      }
+
+      response = {
+        success: true,
+        data: {
+          items,
+          locale,
+        },
+      };
+
+      return NextResponse.json(response, { status: 200 });
+    }
+
+    const finalError = lastErrorCode ?? MultiItemRecognitionError.API_ERROR;
+    status = finalError === MultiItemRecognitionError.TIMEOUT ? 504 : 500;
+    response = {
+      success: false,
+      error: {
+        code: finalError,
+        message: getErrorMessage(finalError),
+      },
+    };
     return NextResponse.json(response, { status });
   } catch (error) {
     console.error('Recognition API error:', error);
@@ -132,7 +281,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<Recogniti
     response = {
       success: false,
       error: {
-        code: 'API_ERROR',
+        code: MultiItemRecognitionError.API_ERROR,
         message: translate('errors.recognitionFailed'),
       },
     };
@@ -140,264 +289,20 @@ export async function POST(request: NextRequest): Promise<NextResponse<Recogniti
     return NextResponse.json(response, { status });
   } finally {
     const processingTimeMs = Date.now() - startTime;
+    const itemCount =
+      response && 'data' in response && response.data ? response.data.items.length : undefined;
+
     logRecognitionEvent({
       event: 'recognition_request',
       requestId,
       apiType,
-      success: response.success,
+      success: response?.success ?? false,
       status,
-      errorCode: response.error?.code,
-      confidence: response.data?.confidence,
-      alternativeCount: response.data?.alternativeCandidates?.length,
+      errorCode: response && 'error' in response ? response.error?.code : undefined,
+      itemCount,
+      locale,
       processingTimeMs,
       timestamp: new Date().toISOString(),
     });
-  }
-}
-
-/**
- * Call OpenAI Vision API for food recognition.
- */
-async function callOpenAIVision(
-  imageData: string,
-  apiKey: string
-): Promise<RecognitionResponse> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 seconds
-
-  try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a food recognition expert specializing in Asian cuisine. Analyze the image and identify the food item(s).
-Respond in JSON format with:
-{
-  "primaryCandidate": "main food name in English",
-  "confidence": 0.0-1.0,
-  "alternativeCandidates": ["alternative1", "alternative2"],
-  "components": ["ingredient1", "ingredient2"]
-}
-If confidence is below 0.7, provide 2-3 alternative candidates.
-If no food is detected, set primaryCandidate to null and confidence to 0.`,
-          },
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'image_url',
-                image_url: {
-                  url: imageData,
-                },
-              },
-              {
-                type: 'text',
-                text: 'What food is in this image? Identify the main dish and any visible components.',
-              },
-            ],
-          },
-        ],
-        max_tokens: 300,
-      }),
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      console.error('OpenAI API error:', response.status, await response.text());
-      return {
-        success: false,
-        error: {
-          code: 'API_ERROR',
-          message: translate('errors.recognitionUnavailable'),
-        },
-      };
-    }
-
-    const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
-
-    if (!content) {
-      return {
-        success: false,
-        error: {
-          code: 'NO_FOOD_DETECTED',
-          message: translate('errors.noFoodDetected'),
-        },
-      };
-    }
-
-    // Parse JSON response from GPT
-    try {
-      // Extract JSON from potential markdown code blocks
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error('No JSON found in response');
-      }
-
-      const parsed = JSON.parse(jsonMatch[0]);
-
-      if (!parsed.primaryCandidate || parsed.confidence === 0) {
-        return {
-          success: false,
-          error: {
-            code: 'NO_FOOD_DETECTED',
-            message: translate('errors.noFoodDetected'),
-          },
-        };
-      }
-
-      return {
-        success: true,
-        data: {
-          primaryCandidate: parsed.primaryCandidate,
-          confidence: parsed.confidence,
-          alternativeCandidates: parsed.alternativeCandidates || [],
-          components: parsed.components || [],
-        },
-      };
-    } catch {
-      console.error('Failed to parse OpenAI response:', content);
-      return {
-        success: false,
-        error: {
-          code: 'API_ERROR',
-          message: translate('errors.recognitionParseFailed'),
-        },
-      };
-    }
-  } catch (error) {
-    clearTimeout(timeoutId);
-    if (error instanceof Error && error.name === 'AbortError') {
-      return {
-        success: false,
-        error: {
-          code: 'TIMEOUT',
-          message: translate('errors.recognitionTimeout'),
-        },
-      };
-    }
-    throw error;
-  }
-}
-
-/**
- * Call Google Cloud Vision API for food recognition.
- * Note: Google Vision doesn't directly identify food names,
- * so we use label detection and filter for food-related labels.
- */
-async function callGoogleVision(
-  imageData: string,
-  apiKey: string
-): Promise<RecognitionResponse> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 seconds
-
-  try {
-    // Extract base64 data from data URL
-    const base64Data = imageData.split(',')[1];
-
-    const response = await fetch(
-      `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          requests: [
-            {
-              image: {
-                content: base64Data,
-              },
-              features: [
-                {
-                  type: 'LABEL_DETECTION',
-                  maxResults: 10,
-                },
-              ],
-            },
-          ],
-        }),
-        signal: controller.signal,
-      }
-    );
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      console.error('Google Vision API error:', response.status, await response.text());
-      return {
-        success: false,
-        error: {
-          code: 'API_ERROR',
-          message: translate('errors.recognitionUnavailable'),
-        },
-      };
-    }
-
-    const data = await response.json();
-    const labels = data.responses?.[0]?.labelAnnotations || [];
-
-    // Filter for food-related labels
-    const foodLabels = labels.filter((label: { description: string; score: number }) => {
-      const desc = label.description.toLowerCase();
-      // Common food-related terms
-      return (
-        desc.includes('food') ||
-        desc.includes('dish') ||
-        desc.includes('cuisine') ||
-        desc.includes('meal') ||
-        desc.includes('rice') ||
-        desc.includes('noodle') ||
-        desc.includes('soup') ||
-        desc.includes('vegetable') ||
-        desc.includes('meat') ||
-        desc.includes('seafood') ||
-        desc.includes('fruit')
-      );
-    });
-
-    if (foodLabels.length === 0) {
-      return {
-        success: false,
-        error: {
-          code: 'NO_FOOD_DETECTED',
-          message: translate('errors.noFoodDetected'),
-        },
-      };
-    }
-
-    const primary = foodLabels[0];
-    const alternatives = foodLabels.slice(1, 4).map((l: { description: string }) => l.description);
-
-    return {
-      success: true,
-      data: {
-        primaryCandidate: primary.description,
-        confidence: primary.score,
-        alternativeCandidates: alternatives,
-      },
-    };
-  } catch (error) {
-    clearTimeout(timeoutId);
-    if (error instanceof Error && error.name === 'AbortError') {
-      return {
-        success: false,
-        error: {
-          code: 'TIMEOUT',
-          message: translate('errors.recognitionTimeout'),
-        },
-      };
-    }
-    throw error;
   }
 }
