@@ -1,4 +1,7 @@
 # CalSee
+[![Demo Video](https://img.youtube.com/vi/QGiLpQ6wZDE/0.jpg)](https://youtube.com/shorts/QGiLpQ6wZDE)
+
+> 💡 **點擊上圖觀看完整示範影片，展示應用程式的完整工作流程。**
 
 CalSee 是一個以 Next.js 開發的概念驗證專案，讓使用者透過拍照記錄飲食。它會在瀏覽器中壓縮圖片、可選擇使用雲端視覺 API 進行食物辨識、從 USDA FoodData Central 取得營養估算值並在資料不足時以 AI 補足，並將所有資料儲存在本地的 IndexedDB 中。
 

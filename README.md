@@ -1,5 +1,7 @@
 # CalSee
+[![Demo Video](https://img.youtube.com/vi/QGiLpQ6wZDE/0.jpg)](https://youtube.com/shorts/QGiLpQ6wZDE)
 
+> 💡 **Click the image above to watch the full demo video** showing the complete workflow of the application.
 [中文說明](README.zh-TW.md)
 
 CalSee is a Next.js proof-of-concept for logging meals by photo. It compresses images in the browser, optionally uses a cloud vision API for recognition, fetches nutrition estimates from USDA FoodData Central with an AI fallback, and stores everything locally in IndexedDB.
