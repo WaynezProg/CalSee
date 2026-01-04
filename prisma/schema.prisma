@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Meal {
+  id            String     @id @default(cuid())
+  userId        String
+  timestamp     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  photoId       String?
+  // DERIVED FIELDS: cached for query/sort performance only.
+  // TRUE SOURCE: sum of MealItem nutrition values.
+  totalCalories Float?
+  totalProtein  Float?
+  totalCarbs    Float?
+  totalFat      Float?
+
+  items         MealItem[]
+  createdAt     DateTime   @default(now())
+
+  @@index([userId])
+  @@index([userId, timestamp])
+  @@map("meals")
+}
+
+model MealItem {
+  id              String   @id @default(cuid())
+  mealId          String
+  foodName        String
+  portionSize     Float
+  portionUnit     String
+  calories        Float?
+  protein         Float?
+  carbs           Float?
+  fat             Float?
+  confidence      Float?
+  notes           String?
+  nutritionSource String?
+
+  meal            Meal     @relation(fields: [mealId], references: [id], onDelete: Cascade)
+
+  @@index([mealId])
+  @@map("meal_items")
+}
+
+model Photo {
+  id            String   @id @default(cuid())
+  userId        String
+  mealId        String?
+  mainPhotoKey  String
+  thumbnailKey  String
+  mainPhotoSize Int
+  thumbnailSize Int
+  mimeType      String
+  width         Int?
+  height        Int?
+  uploadedAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([mealId])
+  @@map("photos")
+}
