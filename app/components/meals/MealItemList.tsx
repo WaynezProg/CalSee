@@ -149,6 +149,8 @@ function MealItemCard({
   const previousFoodNameRef = useRef(item.foodName);
   const previousPortionSizeRef = useRef(item.portionSize);
   const previousPortionUnitRef = useRef(item.portionUnit);
+  const previousContainerSizeRef = useRef(item.containerSize);
+  const previousAiEstimatedWeightRef = useRef(item.aiEstimatedWeightGrams);
 
   // Use nutrition lookup hook when enabled
   const {
@@ -180,22 +182,37 @@ function MealItemCard({
   useEffect(() => {
     const sizeChanged = item.portionSize !== previousPortionSizeRef.current;
     const unitChanged = item.portionUnit !== previousPortionUnitRef.current;
+    const containerChanged =
+      item.containerSize !== previousContainerSizeRef.current;
+    const aiEstimatedWeightChanged =
+      item.aiEstimatedWeightGrams !== previousAiEstimatedWeightRef.current;
 
-    if (!sizeChanged && !unitChanged) return;
+    if (
+      !sizeChanged &&
+      !unitChanged &&
+      !containerChanged &&
+      !aiEstimatedWeightChanged
+    ) {
+      return;
+    }
 
     const previousSize = previousPortionSizeRef.current;
     const previousUnit = previousPortionUnitRef.current;
+    const previousContainerSize = previousContainerSizeRef.current;
+    const previousAiEstimatedWeight = previousAiEstimatedWeightRef.current;
 
     previousPortionSizeRef.current = item.portionSize;
     previousPortionUnitRef.current = item.portionUnit;
+    previousContainerSizeRef.current = item.containerSize;
+    previousAiEstimatedWeightRef.current = item.aiEstimatedWeightGrams;
 
     if (hasManualOverride || manualNutritionMode) {
       const previousScale = resolvePortionScale(
         item.foodName,
         previousSize,
         previousUnit,
-        item.containerSize,
-        item.aiEstimatedWeightGrams
+        previousContainerSize,
+        previousAiEstimatedWeight
       ).scale;
       const nextScale = resolvePortionScale(
         item.foodName,
