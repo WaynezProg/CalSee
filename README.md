@@ -13,6 +13,7 @@ CalSee is a Next.js proof-of-concept for logging meals by photo. It compresses i
 - **Multi-item food recognition** - AI can recognize multiple food items (1-6) in a single photo
 - Progressive nutrition lookup with React Query for parallel fetching
 - Inline editing of food items with portion size and unit customization
+- AI-estimated portions (count/weight + bowl/plate size) to auto-scale nutrition; users can override
 - Nutrition lookup with client-side caching and AI fallback when USDA is missing data
 - Local-only storage (IndexedDB) with photo blobs, nutrition cache, and consent
 - Optional Google sign-in via NextAuth (JWT session)
@@ -26,7 +27,7 @@ CalSee is a Next.js proof-of-concept for logging meals by photo. It compresses i
 - NextAuth.js (Google OAuth)
 - IndexedDB (native API)
 - Tailwind CSS
-- OpenAI Vision API or Google Cloud Vision API
+- OpenAI Vision API or Google Gemini API
 - OpenAI Chat Completions (nutrition fallback)
 - USDA FoodData Central API
 
@@ -48,14 +49,13 @@ CalSee is a Next.js proof-of-concept for logging meals by photo. It compresses i
 
 > Note: Requires payment method. See [pricing](https://openai.com/pricing).
 
-**Option 2: Google Cloud Vision API**
-1. Create a project at [Google Cloud Console](https://console.cloud.google.com/)
-2. Enable [Cloud Vision API](https://console.cloud.google.com/apis/library/vision.googleapis.com)
-3. Go to APIs & Services > Credentials
-4. Click "Create Credentials" > "API key"
-5. Copy your key and set `RECOGNITION_API_TYPE=google`
+**Option 2: Google Gemini API**
+1. Create a project in [Google AI Studio](https://aistudio.google.com/)
+2. Create an API key
+3. Set `RECOGNITION_API_TYPE=gemini`
+4. Put your key in `GEMINI_API_KEY` (or `GOOGLE_API_KEY`)
 
-> Note: New accounts get $300 free credits. See [pricing](https://cloud.google.com/vision/pricing).
+> Note: Usage is billed by Google. See pricing in Google AI Studio.
 
 ### Nutrition API
 
@@ -76,7 +76,8 @@ Create `.env.local` in the repo root:
 
 ```bash
 RECOGNITION_API_KEY=your_key
-RECOGNITION_API_TYPE=openai  # or google
+RECOGNITION_API_TYPE=openai  # or gemini
+GEMINI_API_KEY=your_key      # optional, for gemini
 NUTRITION_API_KEY=your_key
 
 # Optional: enable Google sign-in
@@ -133,6 +134,7 @@ types/              # Shared TypeScript types (MealItem, Meal, recognition types
 - Cloud recognition requires explicit consent and is handled via server-side API routes to protect keys.
 - Multi-item recognition supports 1-6 food items per photo with confidence scores.
 - Nutrition data is fetched progressively in parallel using React Query.
+- Portion scaling uses AI-estimated bowl/plate sizes and counts; metric units are supported for manual overrides.
 - AI nutrition fallback uses the same `RECOGNITION_API_KEY` when OpenAI is selected.
 
 ## License

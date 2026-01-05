@@ -11,6 +11,7 @@ CalSee 是一個以 Next.js 開發的概念驗證專案，讓使用者透過拍�
 - **多項目食物辨識** — AI 可從單張照片辨識多個食物項目（1-6 項）
 - 使用 React Query 進行漸進式營養資料查詢，支援平行載入
 - 食物項目內嵌編輯，可自訂份量大小與單位
+- AI 估算份量（數量/重量 + 碗盤大小）自動縮放營養值，使用者可覆蓋
 - 營養資料查詢，支援客戶端快取，USDA 無資料時以 AI 補足
 - 僅本地儲存（IndexedDB），包含照片 Blob、營養快取與同意狀態
 - 選用 Google 登入（NextAuth，JWT Session）
@@ -24,7 +25,7 @@ CalSee 是一個以 Next.js 開發的概念驗證專案，讓使用者透過拍�
 - NextAuth.js（Google OAuth）
 - IndexedDB（原生 API）
 - Tailwind CSS
-- OpenAI Vision API 或 Google Cloud Vision API
+- OpenAI Vision API 或 Google Gemini API
 - OpenAI Chat Completions（營養資料補足）
 - USDA FoodData Central API
 
@@ -46,14 +47,13 @@ CalSee 是一個以 Next.js 開發的概念驗證專案，讓使用者透過拍�
 
 > 注意：需要綁定付款方式。詳見[定價說明](https://openai.com/pricing)。
 
-**選項 2：Google Cloud Vision API**
-1. 至 [Google Cloud Console](https://console.cloud.google.com/) 建立專案
-2. 啟用 [Cloud Vision API](https://console.cloud.google.com/apis/library/vision.googleapis.com)
-3. 前往「API 和服務」>「憑證」
-4. 點擊「建立憑證」>「API 金鑰」
-5. 複製金鑰並設定 `RECOGNITION_API_TYPE=google`
+**選項 2：Google Gemini API**
+1. 至 [Google AI Studio](https://aistudio.google.com/) 建立專案
+2. 建立 API 金鑰
+3. 設定 `RECOGNITION_API_TYPE=gemini`
+4. 將金鑰放入 `GEMINI_API_KEY`（或 `GOOGLE_API_KEY`）
 
-> 注意：新帳號可獲得 $300 美元免費額度。詳見[定價說明](https://cloud.google.com/vision/pricing)。
+> 注意：使用量由 Google 計費，請見 Google AI Studio 定價。
 
 ### 營養 API
 
@@ -74,7 +74,8 @@ npm install
 
 ```bash
 RECOGNITION_API_KEY=你的金鑰
-RECOGNITION_API_TYPE=openai  # 或 google
+RECOGNITION_API_TYPE=openai  # 或 gemini
+GEMINI_API_KEY=你的金鑰      # 選用，用於 gemini
 NUTRITION_API_KEY=你的金鑰
 
 # 選用：啟用 Google 登入
@@ -131,6 +132,7 @@ types/              # 共用 TypeScript 型別（MealItem、Meal、辨識型別�
 - 雲端辨識需要使用者明確同意，並透過伺服器端 API 路由處理以保護 API 金鑰。
 - 多項目辨識支援每張照片 1-6 個食物項目，並提供信心分數。
 - 營養資料使用 React Query 平行載入，逐步顯示結果。
+- 份量縮放會使用 AI 估算的碗盤大小與數量；公制單位保留給使用者手動覆蓋。
 - AI 營養補足在使用 OpenAI 時，會沿用 `RECOGNITION_API_KEY`。
 
 ## 授權條款
