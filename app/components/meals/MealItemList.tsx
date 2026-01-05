@@ -255,6 +255,8 @@ function MealItemCard({
     item.vitaminD,
     item.vitaminB12,
     item.cholesterol,
+    item.containerSize,
+    item.aiEstimatedWeightGrams,
     hasManualOverride,
     manualNutritionMode,
     index,

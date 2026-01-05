@@ -59,6 +59,8 @@ export function mapRecognitionItemToMealItem(item: RecognitionItem): MealItem {
     portionSize: portion.portionSize ?? DEFAULT_PORTION_SIZE,
     portionUnit: portion.portionUnit ?? DEFAULT_PORTION_UNIT,
     containerSize: portion.containerSize,
+    aiEstimatedCount: portion.aiEstimatedCount,
+    aiEstimatedWeightGrams: portion.aiEstimatedWeightGrams,
     calories: null,
     protein: null,
     carbs: null,

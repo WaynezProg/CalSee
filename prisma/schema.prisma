@@ -33,6 +33,9 @@ model MealItem {
   foodName        String
   portionSize     Float
   portionUnit     String
+  containerSize   String?
+  aiEstimatedCount Float?
+  aiEstimatedWeightGrams Float?
   calories        Float?
   protein         Float?
   carbs           Float?

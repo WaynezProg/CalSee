@@ -192,6 +192,8 @@ export function MealHistory() {
 
   const handleDeleteMeal = async (meal: MealWithThumbnail) => {
     if (!meal.id) return;
+    const confirmed = window.confirm("Delete this meal?");
+    if (!confirmed) return;
 
     try {
       await syncMealWithQueue(meal, "delete");
