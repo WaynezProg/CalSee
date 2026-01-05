@@ -4,6 +4,12 @@
  */
 
 /**
+ * Food category types for classification.
+ */
+export type RecognitionCategory = 'food' | 'beverage' | 'soup' | 'dessert';
+export type ContainerSize = 'small' | 'medium' | 'large';
+
+/**
  * Single food item from recognition response.
  */
 export interface RecognitionItem {
@@ -11,6 +17,10 @@ export interface RecognitionItem {
   confidence?: number;       // Recognition confidence (0.0-1.0)
   notes?: string;            // Additional notes about the item
   portionUnit?: string;      // Portion unit (e.g., "份", "碗")
+  category?: RecognitionCategory; // Food category for special handling (e.g., beverage sweetness)
+  estimatedCount?: number | string; // Estimated count (free format)
+  estimatedWeightGrams?: number | string; // Estimated weight in grams (free format)
+  containerSize?: ContainerSize; // Plate/bowl size hint (small/medium/large)
 }
 
 /**

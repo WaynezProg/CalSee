@@ -208,6 +208,11 @@
     "confirm": "確定要撤回雲端辨識同意嗎？",
     "success": "已撤回同意"
   },
+  "beverageOptions": {
+    "sugarLevel": "甜度",
+    "iceLevel": "冰塊",
+    "sugarCalculation": "{percentage}% = {value}g 糖"
+  },
   "settings": {
     "title": "設定",
     "accountSection": "帳號",

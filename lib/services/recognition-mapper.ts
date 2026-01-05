@@ -7,6 +7,7 @@
  */
 
 import type { RecognitionItem, MultiItemRecognitionResponse } from '@/types/recognition';
+import { derivePortionFromRecognition } from '@/lib/recognition/estimate-utils';
 
 /**
  * MealItem structure for multi-item meals.
@@ -17,6 +18,9 @@ export interface MealItem {
   foodName: string;
   portionSize: number;
   portionUnit: string;
+  containerSize?: RecognitionItem['containerSize'];
+  aiEstimatedCount?: number;
+  aiEstimatedWeightGrams?: number;
   calories: number | null;
   protein: number | null;
   carbs: number | null;
@@ -47,11 +51,14 @@ function generateItemId(): string {
  * @returns MealItem object with default values
  */
 export function mapRecognitionItemToMealItem(item: RecognitionItem): MealItem {
+  const portion = derivePortionFromRecognition(item);
+
   return {
     id: generateItemId(),
     foodName: item.name,
-    portionSize: DEFAULT_PORTION_SIZE,
-    portionUnit: item.portionUnit ?? DEFAULT_PORTION_UNIT,
+    portionSize: portion.portionSize ?? DEFAULT_PORTION_SIZE,
+    portionUnit: portion.portionUnit ?? DEFAULT_PORTION_UNIT,
+    containerSize: portion.containerSize,
     calories: null,
     protein: null,
     carbs: null,

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Meal } from "@/types/sync";
 import { cacheThumbnail, deleteThumbnail, getThumbnail } from "@/lib/db/indexeddb/thumbnail-cache";
 import { syncMealWithQueue } from "@/lib/services/sync/meal-sync";
+import { MealDetailModal } from "./MealDetailModal";
 
 interface MealWithThumbnail extends Meal {
   thumbnailUrl?: string;
@@ -25,6 +26,8 @@ export function MealHistory() {
   const [isLoading, setIsLoading] = useState(true);
   const [expandedMeals, setExpandedMeals] = useState<Record<string, boolean>>({});
   const [photoLoadingIds, setPhotoLoadingIds] = useState<Record<string, boolean>>({});
+  const [selectedMeal, setSelectedMeal] = useState<MealWithThumbnail | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const mealsWithPhotos = useMemo(() => meals.filter(meal => meal.photoId), [meals]);
 
@@ -54,7 +57,8 @@ export function MealHistory() {
 
     const loadThumbnails = async () => {
       for (const meal of mealsWithPhotos) {
-        if (!meal.photoId) continue;
+        const photoId = meal.photoId;
+        if (!photoId) continue;
 
         const setThumbnailUrl = (url: string) => {
           setMeals(prev =>
@@ -66,7 +70,7 @@ export function MealHistory() {
 
         const fallbackToMainPhoto = async () => {
           try {
-            const signedMain = await fetchSignedUrl(meal.photoId, "main");
+            const signedMain = await fetchSignedUrl(photoId, "main");
             if (!isActive) return;
             setThumbnailUrl(signedMain.url);
           } catch {
@@ -75,7 +79,7 @@ export function MealHistory() {
         };
 
         try {
-          const cached = await getThumbnail(meal.photoId);
+          const cached = await getThumbnail(photoId);
           if (cached) {
             const url = URL.createObjectURL(cached);
             if (!isActive) {
@@ -88,7 +92,7 @@ export function MealHistory() {
 
           let signed: { url: string; expiresAt: string } | null = null;
           try {
-            signed = await fetchSignedUrl(meal.photoId, "thumbnail");
+            signed = await fetchSignedUrl(photoId, "thumbnail");
           } catch {
             await fallbackToMainPhoto();
             continue;
@@ -101,7 +105,7 @@ export function MealHistory() {
               continue;
             }
             const blob = await thumbnailResponse.blob();
-            await cacheThumbnail(meal.photoId, blob);
+            await cacheThumbnail(photoId, blob);
             const url = URL.createObjectURL(blob);
 
             if (!isActive) {
@@ -188,8 +192,6 @@ export function MealHistory() {
 
   const handleDeleteMeal = async (meal: MealWithThumbnail) => {
     if (!meal.id) return;
-    const confirmed = window.confirm("Delete this meal?");
-    if (!confirmed) return;
 
     try {
       await syncMealWithQueue(meal, "delete");
@@ -200,6 +202,38 @@ export function MealHistory() {
     } catch (err) {
       setError("Unable to delete meal. It will retry in the background.");
     }
+  };
+
+  const handleOpenDetail = async (meal: MealWithThumbnail) => {
+    // Load full photo if needed
+    if (meal.photoId && !meal.fullPhotoUrl) {
+      await handleLoadFullPhoto(meal);
+    }
+    setSelectedMeal(meal);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseDetail = () => {
+    setIsModalOpen(false);
+    setSelectedMeal(null);
+  };
+
+  const handleSaveMeal = async (updatedMeal: Meal) => {
+    try {
+      await syncMealWithQueue(updatedMeal, "update");
+      // Update local state
+      setMeals(prev =>
+        prev.map(m => (m.id === updatedMeal.id ? { ...m, ...updatedMeal } : m))
+      );
+      // Update selected meal for modal
+      setSelectedMeal(prev => prev ? { ...prev, ...updatedMeal } : null);
+    } catch (err) {
+      throw err; // Let modal handle the error
+    }
+  };
+
+  const handleDeleteFromModal = async (meal: Meal) => {
+    await handleDeleteMeal(meal as MealWithThumbnail);
   };
 
   return (
@@ -285,6 +319,13 @@ export function MealHistory() {
               </div>
 
               <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-2 rounded-full border border-blue-200 px-3 py-1 text-blue-600 hover:bg-blue-50"
+                  onClick={() => handleOpenDetail(meal)}
+                >
+                  查看詳情
+                </button>
                 {meal.photoId && (
                   <button
                     type="button"
@@ -313,6 +354,18 @@ export function MealHistory() {
           );
         })}
       </ul>
+
+      {/* Meal Detail Modal */}
+      {selectedMeal && (
+        <MealDetailModal
+          meal={selectedMeal}
+          photoUrl={selectedMeal.fullPhotoUrl}
+          isOpen={isModalOpen}
+          onClose={handleCloseDetail}
+          onSave={handleSaveMeal}
+          onDelete={handleDeleteFromModal}
+        />
+      )}
     </div>
   );
 }

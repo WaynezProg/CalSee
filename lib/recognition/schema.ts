@@ -6,6 +6,11 @@
 import { z } from 'zod';
 
 /**
+ * Valid food categories.
+ */
+export const FOOD_CATEGORIES = ['food', 'beverage', 'soup', 'dessert'] as const;
+
+/**
  * Schema for a single recognition item.
  */
 export const RecognitionItemSchema = z.object({
@@ -13,6 +18,10 @@ export const RecognitionItemSchema = z.object({
   confidence: z.number().min(0).max(1).optional(),
   notes: z.string().optional(),
   portionUnit: z.string().min(1, 'Portion unit is required').optional(),
+  category: z.enum(FOOD_CATEGORIES).optional(),
+  estimatedCount: z.union([z.number(), z.string().min(1)]).optional(),
+  estimatedWeightGrams: z.union([z.number(), z.string().min(1)]).optional(),
+  containerSize: z.enum(['small', 'medium', 'large']).optional(),
 });
 
 /**

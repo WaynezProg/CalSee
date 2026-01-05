@@ -1,9 +1,16 @@
+export type FoodCategory = 'food' | 'beverage' | 'soup' | 'dessert';
+export type SugarLevel = 'full' | 'less' | 'half' | 'light' | 'none';
+export type IceLevel = 'normal' | 'less' | 'light' | 'none' | 'warm' | 'hot';
+
 export interface MealItem {
   id?: string;
   mealId?: string;
   foodName: string;
   portionSize: number;
   portionUnit: string;
+  containerSize?: 'small' | 'medium' | 'large';
+  aiEstimatedCount?: number;
+  aiEstimatedWeightGrams?: number;
   calories?: number;
   protein?: number;
   carbs?: number;
@@ -11,6 +18,26 @@ export interface MealItem {
   confidence?: number;
   notes?: string;
   nutritionSource?: string;
+
+  // Extended nutrition fields
+  fiber?: number;
+  sugar?: number;
+  saturatedFat?: number;
+  sodium?: number;
+  potassium?: number;
+  calcium?: number;
+  iron?: number;
+  vitaminA?: number;
+  vitaminC?: number;
+  vitaminD?: number;
+  vitaminB12?: number;
+  cholesterol?: number;
+
+  // Beverage options
+  category?: FoodCategory;
+  sugarLevel?: SugarLevel;
+  iceLevel?: IceLevel;
+  baseSugar?: number; // Original AI-estimated sugar value for percentage calculation
 }
 
 export interface Meal {

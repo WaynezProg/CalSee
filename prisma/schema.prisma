@@ -41,6 +41,26 @@ model MealItem {
   notes           String?
   nutritionSource String?
 
+  // Extended nutrition fields
+  fiber           Float?
+  sugar           Float?
+  saturatedFat    Float?
+  sodium          Float?
+  potassium       Float?
+  calcium         Float?
+  iron            Float?
+  vitaminA        Float?
+  vitaminC        Float?
+  vitaminD        Float?
+  vitaminB12      Float?
+  cholesterol     Float?
+
+  // Beverage options
+  category        String?  // 'food' | 'beverage' | 'soup' | 'dessert'
+  sugarLevel      String?  // 'full' | 'less' | 'half' | 'light' | 'none'
+  iceLevel        String?  // 'normal' | 'less' | 'light' | 'none' | 'warm' | 'hot'
+  baseSugar       Float?   // Original AI-estimated sugar value for percentage calculation
+
   meal            Meal     @relation(fields: [mealId], references: [id], onDelete: Cascade)
 
   @@index([mealId])

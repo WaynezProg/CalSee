@@ -16,6 +16,7 @@ import { TotalNutritionSummary } from "./TotalNutritionSummary";
 import { SyncStatus, type SyncStatusType } from "@/app/components/sync/SyncStatus";
 import { syncMealWithQueue, isSyncError } from "@/lib/services/sync/meal-sync";
 import { uploadPhotoWithThumbnail } from "@/lib/services/sync/photo-sync";
+import { derivePortionFromRecognition } from "@/lib/recognition/estimate-utils";
 import type { MealItem, Meal } from "@/types/sync";
 import type { MultiItemRecognitionResponse } from "@/types/recognition";
 
@@ -34,16 +35,16 @@ function mapRecognitionToItems(
   response: MultiItemRecognitionResponse
 ): MealItem[] {
   return response.items.map((item, index) => ({
+    ...derivePortionFromRecognition(item),
     id: `item-${Date.now()}-${index}`,
     foodName: item.name,
-    portionSize: 1,
-    portionUnit: item.portionUnit ?? "份",
     calories: undefined,
     protein: undefined,
     carbs: undefined,
     fat: undefined,
     confidence: item.confidence,
     notes: item.notes,
+    category: item.category,
     nutritionSource: undefined,
   }));
 }
@@ -57,6 +58,7 @@ function createEmptyItem(): MealItem {
     foodName: "",
     portionSize: 1,
     portionUnit: "份",
+    containerSize: undefined,
     calories: undefined,
     protein: undefined,
     carbs: undefined,
