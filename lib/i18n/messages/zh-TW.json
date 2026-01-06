@@ -86,6 +86,15 @@
     "or": "或"
   },
   "mealForm": {
+    "mealDateLabel": "日期",
+    "mealTimeLabel": "時間",
+    "mealTypeLabel": "餐別",
+    "mealTypeOptions": {
+      "breakfast": "早餐",
+      "lunch": "午餐",
+      "dinner": "晚餐",
+      "snack": "點心"
+    },
     "foodNameLabel": "食物名稱",
     "foodNamePlaceholder": "輸入食物名稱",
     "recognitionConfidence": "辨識信心度：{percent}%",

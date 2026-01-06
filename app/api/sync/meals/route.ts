@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
       data: {
         userId,
         timestamp: data.timestamp ? new Date(data.timestamp) : new Date(),
+        mealType: data.mealType ?? null,
         photoId: data.photoId ?? null,
         totalCalories: totals.totalCalories,
         totalProtein: totals.totalProtein,

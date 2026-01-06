@@ -11,6 +11,7 @@ model Meal {
   userId        String
   timestamp     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
+  mealType      String?
   photoId       String?
   // DERIVED FIELDS: cached for query/sort performance only.
   // TRUE SOURCE: sum of MealItem nutrition values.

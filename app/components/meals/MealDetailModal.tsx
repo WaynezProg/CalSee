@@ -10,9 +10,42 @@
 
 import { useState, useCallback } from "react";
 import { useI18n } from "@/lib/i18n";
-import type { Meal, MealItem } from "@/types/sync";
+import type { Meal, MealItem, MealType } from "@/types/sync";
 import { MealItemList } from "./MealItemList";
 import { TotalNutritionSummary } from "./TotalNutritionSummary";
+
+function pad2(value: number) {
+  return value.toString().padStart(2, "0");
+}
+
+function formatDateInputValue(date: Date) {
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+}
+
+function formatTimeInputValue(date: Date) {
+  return `${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+}
+
+function resolveDefaultMealType(date: Date): MealType {
+  const hour = date.getHours();
+  if (hour >= 5 && hour < 11) return "breakfast";
+  if (hour >= 11 && hour < 16) return "lunch";
+  if (hour >= 16 && hour < 22) return "dinner";
+  return "snack";
+}
+
+function toLocalTimestamp(dateValue: string, timeValue: string) {
+  if (!dateValue || !timeValue) {
+    return new Date().toISOString();
+  }
+  const [year, month, day] = dateValue.split("-").map(Number);
+  const [hour, minute] = timeValue.split(":").map(Number);
+  const localDate = new Date(year, month - 1, day, hour, minute);
+  if (Number.isNaN(localDate.getTime())) {
+    return new Date().toISOString();
+  }
+  return localDate.toISOString();
+}
 
 interface MealDetailModalProps {
   meal: Meal;
@@ -34,25 +67,47 @@ export function MealDetailModal({
   const { t } = useI18n();
   const [isEditing, setIsEditing] = useState(false);
   const [editedItems, setEditedItems] = useState<MealItem[]>(meal.items);
+  const [editedMealDate, setEditedMealDate] = useState(() =>
+    formatDateInputValue(new Date(meal.timestamp))
+  );
+  const [editedMealTime, setEditedMealTime] = useState(() =>
+    formatTimeInputValue(new Date(meal.timestamp))
+  );
+  const [editedMealType, setEditedMealType] = useState<MealType>(
+    meal.mealType ?? resolveDefaultMealType(new Date(meal.timestamp))
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const mealTypeLabel = meal.mealType
+    ? t(`mealForm.mealTypeOptions.${meal.mealType}`)
+    : null;
 
   // Reset state when meal changes
   const resetState = useCallback(() => {
     setIsEditing(false);
     setEditedItems(meal.items);
+    setEditedMealDate(formatDateInputValue(new Date(meal.timestamp)));
+    setEditedMealTime(formatTimeInputValue(new Date(meal.timestamp)));
+    setEditedMealType(meal.mealType ?? resolveDefaultMealType(new Date(meal.timestamp)));
     setError(null);
-  }, [meal.items]);
+  }, [meal.items, meal.mealType, meal.timestamp]);
 
   const handleStartEdit = () => {
     setEditedItems([...meal.items]);
+    setEditedMealDate(formatDateInputValue(new Date(meal.timestamp)));
+    setEditedMealTime(formatTimeInputValue(new Date(meal.timestamp)));
+    setEditedMealType(meal.mealType ?? resolveDefaultMealType(new Date(meal.timestamp)));
     setIsEditing(true);
     setError(null);
   };
 
   const handleCancelEdit = () => {
     setEditedItems(meal.items);
+    setEditedMealDate(formatDateInputValue(new Date(meal.timestamp)));
+    setEditedMealTime(formatTimeInputValue(new Date(meal.timestamp)));
+    setEditedMealType(meal.mealType ?? resolveDefaultMealType(new Date(meal.timestamp)));
     setIsEditing(false);
     setError(null);
   };
@@ -82,6 +137,8 @@ export function MealDetailModal({
     try {
       const updatedMeal: Meal = {
         ...meal,
+        timestamp: toLocalTimestamp(editedMealDate, editedMealTime),
+        mealType: editedMealType,
         items: validItems,
         updatedAt: new Date().toISOString(),
       };
@@ -157,11 +214,65 @@ export function MealDetailModal({
           )}
 
           {/* Timestamp */}
-          <p className="mb-4 text-sm text-gray-500">
-            {t("mealDetail.recordedAt", {
-              time: new Date(meal.timestamp).toLocaleString(),
-            })}
-          </p>
+          <div className="mb-4 space-y-1 text-sm text-gray-500">
+            <p>
+              {t("mealDetail.recordedAt", {
+                time: new Date(meal.timestamp).toLocaleString(),
+              })}
+            </p>
+            {mealTypeLabel && (
+              <p>
+                {t("mealForm.mealTypeLabel")}: {mealTypeLabel}
+              </p>
+            )}
+          </div>
+
+          {isEditing && (
+            <div className="mb-4 rounded-lg border border-slate-200 bg-white p-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <label className="text-sm text-slate-700">
+                  <span className="mb-1 block text-xs font-medium text-slate-500">
+                    {t("mealForm.mealDateLabel")}
+                  </span>
+                  <input
+                    type="date"
+                    value={editedMealDate}
+                    onChange={(e) => setEditedMealDate(e.target.value)}
+                    disabled={isSaving}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+                  />
+                </label>
+                <label className="text-sm text-slate-700">
+                  <span className="mb-1 block text-xs font-medium text-slate-500">
+                    {t("mealForm.mealTimeLabel")}
+                  </span>
+                  <input
+                    type="time"
+                    value={editedMealTime}
+                    onChange={(e) => setEditedMealTime(e.target.value)}
+                    disabled={isSaving}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+                  />
+                </label>
+                <label className="text-sm text-slate-700">
+                  <span className="mb-1 block text-xs font-medium text-slate-500">
+                    {t("mealForm.mealTypeLabel")}
+                  </span>
+                  <select
+                    value={editedMealType}
+                    onChange={(e) => setEditedMealType(e.target.value as MealType)}
+                    disabled={isSaving}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+                  >
+                    <option value="breakfast">{t("mealForm.mealTypeOptions.breakfast")}</option>
+                    <option value="lunch">{t("mealForm.mealTypeOptions.lunch")}</option>
+                    <option value="dinner">{t("mealForm.mealTypeOptions.dinner")}</option>
+                    <option value="snack">{t("mealForm.mealTypeOptions.snack")}</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+          )}
 
           {/* Error message */}
           {error && (

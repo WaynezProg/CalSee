@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useI18n } from "@/lib/i18n";
 import type { Meal } from "@/types/sync";
 import { cacheThumbnail, deleteThumbnail, getThumbnail } from "@/lib/db/indexeddb/thumbnail-cache";
 import { syncMealWithQueue } from "@/lib/services/sync/meal-sync";
@@ -21,6 +22,7 @@ async function fetchSignedUrl(photoId: string, type: "main" | "thumbnail") {
 }
 
 export function MealHistory() {
+  const { t } = useI18n();
   const [meals, setMeals] = useState<MealWithThumbnail[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -284,6 +286,9 @@ export function MealHistory() {
           const mealId = meal.id;
           const isExpanded = !!expandedMeals[mealId];
           const isPhotoLoading = !!photoLoadingIds[mealId];
+          const mealTypeLabel = meal.mealType
+            ? t(`mealForm.mealTypeOptions.${meal.mealType}`)
+            : null;
           return (
             <li
               key={mealId}
@@ -306,6 +311,11 @@ export function MealHistory() {
                 <div className="flex-1 space-y-2">
                   <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
                     <span>{new Date(meal.timestamp).toLocaleString()}</span>
+                    {mealTypeLabel && (
+                      <span className="rounded-full bg-amber-50 px-2 py-0.5 text-amber-700">
+                        {mealTypeLabel}
+                      </span>
+                    )}
                     <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-600">
                       {meal.items.length} item{meal.items.length === 1 ? "" : "s"}
                     </span>

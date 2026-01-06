@@ -1,6 +1,7 @@
 export type FoodCategory = 'food' | 'beverage' | 'soup' | 'dessert';
 export type SugarLevel = 'full' | 'less' | 'half' | 'light' | 'none';
 export type IceLevel = 'normal' | 'less' | 'light' | 'none' | 'warm' | 'hot';
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
 export interface MealItem {
   id?: string;
@@ -45,6 +46,7 @@ export interface Meal {
   userId?: string;
   timestamp: string;
   updatedAt?: string;
+  mealType?: MealType | null;
   photoId?: string | null;
   totalCalories?: number | null;
   totalProtein?: number | null;

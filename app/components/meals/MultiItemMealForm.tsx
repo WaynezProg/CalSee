@@ -17,7 +17,7 @@ import { SyncStatus, type SyncStatusType } from "@/app/components/sync/SyncStatu
 import { syncMealWithQueue, isSyncError } from "@/lib/services/sync/meal-sync";
 import { uploadPhotoWithThumbnail } from "@/lib/services/sync/photo-sync";
 import { derivePortionFromRecognition } from "@/lib/recognition/estimate-utils";
-import type { MealItem, Meal } from "@/types/sync";
+import type { MealItem, Meal, MealType } from "@/types/sync";
 import type { MultiItemRecognitionResponse } from "@/types/recognition";
 
 interface MultiItemMealFormProps {
@@ -69,6 +69,39 @@ function createEmptyItem(): MealItem {
   };
 }
 
+function pad2(value: number) {
+  return value.toString().padStart(2, "0");
+}
+
+function formatDateInputValue(date: Date) {
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+}
+
+function formatTimeInputValue(date: Date) {
+  return `${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+}
+
+function resolveDefaultMealType(date: Date): MealType {
+  const hour = date.getHours();
+  if (hour >= 5 && hour < 11) return "breakfast";
+  if (hour >= 11 && hour < 16) return "lunch";
+  if (hour >= 16 && hour < 22) return "dinner";
+  return "snack";
+}
+
+function toLocalTimestamp(dateValue: string, timeValue: string) {
+  if (!dateValue || !timeValue) {
+    return new Date().toISOString();
+  }
+  const [year, month, day] = dateValue.split("-").map(Number);
+  const [hour, minute] = timeValue.split(":").map(Number);
+  const localDate = new Date(year, month - 1, day, hour, minute);
+  if (Number.isNaN(localDate.getTime())) {
+    return new Date().toISOString();
+  }
+  return localDate.toISOString();
+}
+
 export function MultiItemMealForm({
   recognitionResult,
   photoFile,
@@ -77,6 +110,9 @@ export function MultiItemMealForm({
   onCancel,
 }: MultiItemMealFormProps) {
   const { t } = useI18n();
+  const [mealDate, setMealDate] = useState(() => formatDateInputValue(new Date()));
+  const [mealTime, setMealTime] = useState(() => formatTimeInputValue(new Date()));
+  const [mealType, setMealType] = useState<MealType>(() => resolveDefaultMealType(new Date()));
   const [items, setItems] = useState<MealItem[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [syncStatus, setSyncStatus] = useState<SyncStatusType | null>(null);
@@ -90,6 +126,10 @@ export function MultiItemMealForm({
       // Default to one empty item for manual entry
       setItems([createEmptyItem()]);
     }
+    const now = new Date();
+    setMealDate(formatDateInputValue(now));
+    setMealTime(formatTimeInputValue(now));
+    setMealType(resolveDefaultMealType(now));
   }, [recognitionResult]);
 
   // Handler for adding a new item
@@ -141,8 +181,10 @@ export function MultiItemMealForm({
         }
 
         // Create meal with all items (T027 - use existing sync infrastructure)
+        const timestamp = toLocalTimestamp(mealDate, mealTime);
         const meal: Meal = {
-          timestamp: new Date().toISOString(),
+          timestamp,
+          mealType,
           photoId,
           items: validItems,
         };
@@ -164,7 +206,7 @@ export function MultiItemMealForm({
         setIsSaving(false);
       }
     },
-    [items, photoFile, t, onSubmitSuccess]
+    [items, photoFile, mealDate, mealTime, mealType, t, onSubmitSuccess]
   );
 
   // Check if form is valid (T026 - at least one item with non-empty name)
@@ -176,6 +218,51 @@ export function MultiItemMealForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="rounded-lg border border-slate-200 bg-white p-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <label className="text-sm text-slate-700">
+            <span className="mb-1 block text-xs font-medium text-slate-500">
+              {t("mealForm.mealDateLabel")}
+            </span>
+            <input
+              type="date"
+              value={mealDate}
+              onChange={(e) => setMealDate(e.target.value)}
+              disabled={disabled}
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+            />
+          </label>
+          <label className="text-sm text-slate-700">
+            <span className="mb-1 block text-xs font-medium text-slate-500">
+              {t("mealForm.mealTimeLabel")}
+            </span>
+            <input
+              type="time"
+              value={mealTime}
+              onChange={(e) => setMealTime(e.target.value)}
+              disabled={disabled}
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+            />
+          </label>
+          <label className="text-sm text-slate-700">
+            <span className="mb-1 block text-xs font-medium text-slate-500">
+              {t("mealForm.mealTypeLabel")}
+            </span>
+            <select
+              value={mealType}
+              onChange={(e) => setMealType(e.target.value as MealType)}
+              disabled={disabled}
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
+            >
+              <option value="breakfast">{t("mealForm.mealTypeOptions.breakfast")}</option>
+              <option value="lunch">{t("mealForm.mealTypeOptions.lunch")}</option>
+              <option value="dinner">{t("mealForm.mealTypeOptions.dinner")}</option>
+              <option value="snack">{t("mealForm.mealTypeOptions.snack")}</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
       {/* Item list */}
       <MealItemList
         items={items}

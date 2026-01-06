@@ -124,6 +124,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
       where: { id: meal.id },
       data: {
         timestamp: data.timestamp ? new Date(data.timestamp) : meal.timestamp,
+        mealType: data.mealType ?? meal.mealType ?? null,
         photoId: data.photoId ?? null,
         totalCalories: totals.totalCalories,
         totalProtein: totals.totalProtein,
