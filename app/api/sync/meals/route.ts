@@ -9,6 +9,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "unauthorized", message: "Unauthorized" }, { status: 401 });
   }
 
+  const userIds = [session.user.id, session.user.providerId].filter(
+    (userId): userId is string => Boolean(userId),
+  );
   const since = request.nextUrl.searchParams.get("since");
   const limitParam = request.nextUrl.searchParams.get("limit");
   const limit = limitParam ? Number(limitParam) : 100;
@@ -16,7 +19,7 @@ export async function GET(request: NextRequest) {
   try {
     const meals = await prisma.meal.findMany({
       where: {
-        userId: session.user.id,
+        userId: { in: userIds },
         ...(since ? { updatedAt: { gt: new Date(since) } } : {}),
       },
       include: { items: true },
@@ -39,6 +42,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "unauthorized", message: "Unauthorized" }, { status: 401 });
   }
 
+  const userId = session.user.id;
   const data = await request.json();
 
   if (!data?.items || !Array.isArray(data.items) || data.items.length === 0) {
@@ -53,7 +57,7 @@ export async function POST(request: NextRequest) {
   try {
     const meal = await prisma.meal.create({
       data: {
-        userId: session.user.id,
+        userId,
         timestamp: data.timestamp ? new Date(data.timestamp) : new Date(),
         photoId: data.photoId ?? null,
         totalCalories: totals.totalCalories,

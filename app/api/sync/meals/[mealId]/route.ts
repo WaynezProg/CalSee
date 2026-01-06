@@ -14,10 +14,13 @@ export async function DELETE(request: Request, { params }: RouteParams) {
     return NextResponse.json({ error: "unauthorized", message: "Unauthorized" }, { status: 401 });
   }
 
+  const userIds = [session.user.id, session.user.providerId].filter(
+    (userId): userId is string => Boolean(userId),
+  );
   const { mealId } = await params;
 
   const meal = await prisma.meal.findFirst({
-    where: { id: mealId, userId: session.user.id },
+    where: { id: mealId, userId: { in: userIds } },
   });
 
   if (!meal) {
@@ -35,7 +38,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
       prisma.photo.deleteMany({
         where: {
           id: photoId,
-          userId: session.user.id,
+          userId: { in: userIds },
         },
       }),
       prisma.meal.delete({ where: { id: meal.id } }),
@@ -60,6 +63,9 @@ export async function PUT(request: Request, { params }: RouteParams) {
     return NextResponse.json({ error: "unauthorized", message: "Unauthorized" }, { status: 401 });
   }
 
+  const userIds = [session.user.id, session.user.providerId].filter(
+    (userId): userId is string => Boolean(userId),
+  );
   const { mealId } = await params;
   const data = await request.json();
 
@@ -86,7 +92,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
   }
 
   const meal = await prisma.meal.findFirst({
-    where: { id: mealId, userId: session.user.id },
+    where: { id: mealId, userId: { in: userIds } },
     include: { items: true },
   });
 

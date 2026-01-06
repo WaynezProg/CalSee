@@ -9,6 +9,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "unauthorized", message: "Unauthorized" }, { status: 401 });
   }
 
+  const userIds = [session.user.id, session.user.providerId].filter(
+    (userId): userId is string => Boolean(userId),
+  );
   const photoId = request.nextUrl.searchParams.get("photoId");
   const type = request.nextUrl.searchParams.get("type") === "thumbnail" ? "thumbnail" : "main";
 
@@ -24,7 +27,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "not_found", message: "Photo not found" }, { status: 404 });
   }
 
-  if (photo.userId !== session.user.id) {
+  if (!userIds.includes(photo.userId)) {
     return NextResponse.json({ error: "forbidden", message: "Forbidden" }, { status: 403 });
   }
 

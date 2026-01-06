@@ -39,20 +39,27 @@ export const authOptions: NextAuthConfig = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.userId = user.id;
+        const primaryUserId = user.email ?? user.id;
+        token.userId = primaryUserId;
+        token.providerId = user.id;
         token.email = user.email;
         token.name = user.name;
         token.avatarUrl = user.image;
+      }
+
+      if (!token.userId && token.email) {
+        token.userId = token.email;
       }
 
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.userId as string;
+        session.user.id = (token.userId ?? token.email ?? token.sub) as string;
         session.user.email = token.email as string;
         session.user.name = token.name as string;
         session.user.image = token.avatarUrl as string;
+        session.user.providerId = (token.providerId ?? token.sub) as string | undefined;
       }
 
       return session;
