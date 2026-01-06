@@ -47,7 +47,11 @@ export const authOptions: NextAuthConfig = {
         token.name = user.name;
         token.avatarUrl = user.image;
 
-        await migrateUserData(user.id, primaryUserId);
+        // Migrate user data in background (don't block auth flow)
+        // Using void to explicitly ignore the promise
+        void migrateUserData(user.id, primaryUserId).catch((err) => {
+          console.warn("[auth] Background migration failed:", err);
+        });
       }
 
       if (!token.userId && token.email) {

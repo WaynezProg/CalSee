@@ -9,9 +9,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "unauthorized", message: "Unauthorized" }, { status: 401 });
   }
 
-  const userIds = [session.user.id, session.user.providerId].filter(
-    (userId): userId is string => Boolean(userId),
-  );
+  // Build list of user IDs to query (primary + provider ID if different)
+  const userIds: string[] = [session.user.id];
+  if (session.user.providerId && session.user.providerId !== session.user.id) {
+    userIds.push(session.user.providerId);
+  }
+
   const since = request.nextUrl.searchParams.get("since");
   const limitParam = request.nextUrl.searchParams.get("limit");
   const limit = limitParam ? Number(limitParam) : 100;

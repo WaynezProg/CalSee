@@ -14,9 +14,11 @@ export async function DELETE(request: Request, { params }: RouteParams) {
     return NextResponse.json({ error: "unauthorized", message: "Unauthorized" }, { status: 401 });
   }
 
-  const userIds = [session.user.id, session.user.providerId].filter(
-    (userId): userId is string => Boolean(userId),
-  );
+  // Build list of user IDs to query (primary + provider ID if different)
+  const userIds: string[] = [session.user.id];
+  if (session.user.providerId && session.user.providerId !== session.user.id) {
+    userIds.push(session.user.providerId);
+  }
   const { mealId } = await params;
 
   const meal = await prisma.meal.findFirst({
@@ -64,9 +66,11 @@ export async function PUT(request: Request, { params }: RouteParams) {
     return NextResponse.json({ error: "unauthorized", message: "Unauthorized" }, { status: 401 });
   }
 
-  const userIds = [session.user.id, session.user.providerId].filter(
-    (userId): userId is string => Boolean(userId),
-  );
+  // Build list of user IDs to query (primary + provider ID if different)
+  const userIds: string[] = [session.user.id];
+  if (session.user.providerId && session.user.providerId !== session.user.id) {
+    userIds.push(session.user.providerId);
+  }
   const { mealId } = await params;
   const data = await request.json();
 

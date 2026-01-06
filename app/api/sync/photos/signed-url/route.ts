@@ -9,9 +9,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "unauthorized", message: "Unauthorized" }, { status: 401 });
   }
 
-  const userIds = [session.user.id, session.user.providerId].filter(
-    (userId): userId is string => Boolean(userId),
-  );
+  // Build list of user IDs to query (primary + provider ID if different)
+  const userIds: string[] = [session.user.id];
+  if (session.user.providerId && session.user.providerId !== session.user.id) {
+    userIds.push(session.user.providerId);
+  }
   const photoId = request.nextUrl.searchParams.get("photoId");
   const type = request.nextUrl.searchParams.get("type") === "thumbnail" ? "thumbnail" : "main";
 
