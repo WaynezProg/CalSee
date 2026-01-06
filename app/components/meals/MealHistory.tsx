@@ -142,10 +142,15 @@ export function MealHistory() {
         const meal = mealsToLoad[index];
         const photoId = meal.photoId!;
         
-        if (result.status === "fulfilled" && result.value.url && result.value.mealId) {
-          urlMap.set(result.value.mealId, result.value.url);
-          // Remove from loading ref on success
+        if (result.status === "fulfilled") {
+          // Always remove from loading ref when promise fulfills (success or null URL)
           loadingPhotoIdsRef.current.delete(photoId);
+          
+          // Only update urlMap if we got a valid URL
+          if (result.value.url && result.value.mealId) {
+            urlMap.set(result.value.mealId, result.value.url);
+          }
+          // If url is null, photoId is already removed, allowing retry on next effect run
         } else if (result.status === "rejected") {
           // Remove from loading ref on failure to allow retry
           loadingPhotoIdsRef.current.delete(photoId);
