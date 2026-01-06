@@ -31,8 +31,6 @@ export function MealHistory() {
   const [selectedMeal, setSelectedMeal] = useState<MealWithThumbnail | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const mealsWithPhotos = useMemo(() => meals.filter(meal => meal.photoId), [meals]);
-
   const loadMeals = async () => {
     setError(null);
     setIsLoading(true);
@@ -54,80 +52,82 @@ export function MealHistory() {
     void loadMeals();
   }, []);
 
+  // Track which photoIds have been loaded to avoid re-fetching
+  const [loadedPhotoIds, setLoadedPhotoIds] = useState<Set<string>>(new Set());
+
   useEffect(() => {
     let isActive = true;
 
     const loadThumbnails = async () => {
-      for (const meal of mealsWithPhotos) {
-        const photoId = meal.photoId;
-        if (!photoId) continue;
+      // Filter to meals with photos that haven't been loaded yet
+      const mealsToLoad = meals.filter(
+        meal => meal.photoId && !meal.thumbnailUrl && !loadedPhotoIds.has(meal.photoId)
+      );
 
-        const setThumbnailUrl = (url: string) => {
-          setMeals(prev =>
-            prev.map(item =>
-              item.id === meal.id ? { ...item, thumbnailUrl: url } : item,
-            ),
-          );
-        };
+      if (mealsToLoad.length === 0) return;
 
-        const fallbackToMainPhoto = async () => {
-          try {
-            const signedMain = await fetchSignedUrl(photoId, "main");
-            if (!isActive) return;
-            setThumbnailUrl(signedMain.url);
-          } catch {
-            // Ignore if main photo also fails.
-          }
-        };
+      // Mark these as being loaded to prevent duplicate fetches
+      const newLoadedIds = new Set(loadedPhotoIds);
+      mealsToLoad.forEach(meal => {
+        if (meal.photoId) newLoadedIds.add(meal.photoId);
+      });
+      setLoadedPhotoIds(newLoadedIds);
 
-        try {
-          const cached = await getThumbnail(photoId);
-          if (cached) {
-            const url = URL.createObjectURL(cached);
-            if (!isActive) {
-              URL.revokeObjectURL(url);
-              return;
+      // Load all thumbnails in parallel
+      const results = await Promise.allSettled(
+        mealsToLoad.map(async meal => {
+          const photoId = meal.photoId!;
+
+          const loadFromCache = async (): Promise<string | null> => {
+            const cached = await getThumbnail(photoId);
+            if (cached) {
+              return URL.createObjectURL(cached);
             }
-            setThumbnailUrl(url);
-            continue;
-          }
+            return null;
+          };
 
-          let signed: { url: string; expiresAt: string } | null = null;
-          try {
-            signed = await fetchSignedUrl(photoId, "thumbnail");
-          } catch {
-            await fallbackToMainPhoto();
-            continue;
-          }
-
-          try {
-            const thumbnailResponse = await fetch(signed.url);
-            if (!thumbnailResponse.ok) {
-              await fallbackToMainPhoto();
-              continue;
+          const loadFromServer = async (): Promise<string | null> => {
+            try {
+              const signed = await fetchSignedUrl(photoId, "thumbnail");
+              const response = await fetch(signed.url);
+              if (!response.ok) throw new Error("Thumbnail fetch failed");
+              const blob = await response.blob();
+              await cacheThumbnail(photoId, blob);
+              return URL.createObjectURL(blob);
+            } catch {
+              // Fallback to main photo
+              try {
+                const signedMain = await fetchSignedUrl(photoId, "main");
+                return signedMain.url;
+              } catch {
+                return null;
+              }
             }
-            const blob = await thumbnailResponse.blob();
-            await cacheThumbnail(photoId, blob);
-            const url = URL.createObjectURL(blob);
+          };
 
-            if (!isActive) {
-              URL.revokeObjectURL(url);
-              return;
-            }
+          const url = (await loadFromCache()) || (await loadFromServer());
+          return { mealId: meal.id, url };
+        })
+      );
 
-            setThumbnailUrl(url);
-          } catch {
-            if (!isActive) return;
-            if (signed) {
-              // Fallback to signed URL to avoid CORS/cache issues.
-              setThumbnailUrl(signed.url);
-            } else {
-              await fallbackToMainPhoto();
-            }
-          }
-        } catch (err) {
-          // Ignore thumbnail failures; cached thumbnails will still display.
+      if (!isActive) return;
+
+      // Batch update all thumbnails at once
+      const urlMap = new Map<string, string>();
+      results.forEach(result => {
+        if (result.status === "fulfilled" && result.value.url && result.value.mealId) {
+          urlMap.set(result.value.mealId, result.value.url);
         }
+      });
+
+      if (urlMap.size > 0) {
+        setMeals(prev =>
+          prev.map(meal =>
+            meal.id && urlMap.has(meal.id)
+              ? { ...meal, thumbnailUrl: urlMap.get(meal.id) }
+              : meal
+          )
+        );
       }
     };
 
@@ -136,7 +136,7 @@ export function MealHistory() {
     return () => {
       isActive = false;
     };
-  }, [mealsWithPhotos]);
+  }, [meals, loadedPhotoIds]);
 
   useEffect(() => {
     const refreshExpired = async () => {
