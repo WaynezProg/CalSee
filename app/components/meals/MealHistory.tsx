@@ -51,19 +51,10 @@ export function MealHistory() {
       const newMeals = data.meals ?? [];
       setMeals(newMeals);
       
-      // Clean up loading ref for photoIds that no longer exist in the new meals
-      const currentPhotoIds = new Set(
-        newMeals.map((meal: MealWithThumbnail) => meal.photoId).filter(Boolean) as string[]
-      );
-      const photoIdsToRemove: string[] = [];
-      loadingPhotoIdsRef.current.forEach(photoId => {
-        if (!currentPhotoIds.has(photoId)) {
-          photoIdsToRemove.push(photoId);
-        }
-      });
-      photoIdsToRemove.forEach(photoId => {
-        loadingPhotoIdsRef.current.delete(photoId);
-      });
+      // Clear all loading refs when meals are refreshed
+      // This allows previously failed photos to be retried after refresh,
+      // while still preventing infinite retry loops within the same effect run
+      loadingPhotoIdsRef.current.clear();
     } catch (err) {
       setError("Unable to load meal history");
     } finally {
