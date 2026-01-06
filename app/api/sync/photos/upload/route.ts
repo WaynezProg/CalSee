@@ -70,6 +70,7 @@ export async function POST(request: NextRequest) {
       { status: 201 },
     );
   } catch (error) {
+    console.error("[sync] Photo upload failed", error);
     return NextResponse.json(
       { error: "server_error", message: "Photo upload failed" },
       { status: 500 },

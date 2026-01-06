@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ url, expiresAt, expiresIn });
   } catch (error) {
+    console.error("[sync] Failed to generate signed URL", error);
     return NextResponse.json(
       { error: "server_error", message: "Failed to generate signed URL" },
       { status: 500 },

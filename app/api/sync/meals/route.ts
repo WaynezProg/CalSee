@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ meals, hasMore: false });
   } catch (error) {
+    console.error("[sync] Failed to load meals", error);
     return NextResponse.json(
       { error: "server_error", message: "Failed to load meals" },
       { status: 500 },
@@ -102,6 +103,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(meal, { status: 201 });
   } catch (error) {
+    console.error("[sync] Failed to create meal", error);
     return NextResponse.json(
       { error: "server_error", message: "Failed to create meal" },
       { status: 500 },

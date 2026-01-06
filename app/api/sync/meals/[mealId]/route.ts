@@ -50,6 +50,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
       photoDeleted: Boolean(photoId),
     });
   } catch (error) {
+    console.error("[sync] Failed to delete meal", error);
     return NextResponse.json(
       { error: "server_error", message: "Failed to delete meal" },
       { status: 500 },
@@ -163,6 +164,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
 
     return NextResponse.json(updatedMeal);
   } catch (error) {
+    console.error("[sync] Failed to update meal", error);
     return NextResponse.json(
       { error: "server_error", message: "Failed to update meal" },
       { status: 500 },
