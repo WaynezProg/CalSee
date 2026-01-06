@@ -51,9 +51,8 @@ export function MealHistory() {
       const newMeals = data.meals ?? [];
       setMeals(newMeals);
       
-      // Clear all loading refs when meals are refreshed
-      // This allows previously failed photos to be retried after refresh,
-      // while still preventing infinite retry loops within the same effect run
+      // Clear loading refs when meals are refreshed to allow retry of transient failures
+      // Keep failed refs to prevent infinite retry loops for permanently unavailable photos
       loadingPhotoIdsRef.current.clear();
     } catch (err) {
       setError("Unable to load meal history");
@@ -68,14 +67,21 @@ export function MealHistory() {
 
   // Track which photoIds are being loaded (use ref to avoid re-triggering effect)
   const loadingPhotoIdsRef = useRef<Set<string>>(new Set());
+  // Track permanently failed photoIds (all fallback attempts returned null)
+  // This persists across refreshes to prevent infinite retry loops
+  const failedPhotoIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     let isActive = true;
 
     const loadThumbnails = async () => {
       // Filter to meals with photos that haven't been loaded yet
+      // Skip photos that are currently loading or have permanently failed
       const mealsToLoad = meals.filter(
-        meal => meal.photoId && !meal.thumbnailUrl && !loadingPhotoIdsRef.current.has(meal.photoId)
+        meal => meal.photoId && 
+                !meal.thumbnailUrl && 
+                !loadingPhotoIdsRef.current.has(meal.photoId) &&
+                !failedPhotoIdsRef.current.has(meal.photoId)
       );
 
       if (mealsToLoad.length === 0) return;
@@ -135,22 +141,26 @@ export function MealHistory() {
         
         if (result.status === "fulfilled") {
           if (result.value.url) {
-            // Successfully loaded a valid URL - always remove from loading ref
+            // Successfully loaded a valid URL - remove from both sets
             // regardless of whether mealId exists, to prevent permanent blocking
             loadingPhotoIdsRef.current.delete(photoId);
+            failedPhotoIdsRef.current.delete(photoId);
             
             // Only update urlMap if we have a mealId to map it to
             if (result.value.mealId) {
               urlMap.set(result.value.mealId, result.value.url);
             }
           } else {
-            // All fallback attempts failed (null URL) - keep photoId in loading set
-            // to prevent infinite retry loops for permanently unavailable photos
-            // The photoId will remain in the set, blocking future retry attempts
+            // All fallback attempts failed (null URL) - mark as permanently failed
+            // Remove from loading set and add to failed set to prevent infinite retry loops
+            // Failed set persists across refreshes to prevent retrying permanently unavailable photos
+            loadingPhotoIdsRef.current.delete(photoId);
+            failedPhotoIdsRef.current.add(photoId);
           }
         } else if (result.status === "rejected") {
-          // Promise rejected - remove to allow retry for transient network errors
+          // Promise rejected - remove from loading set to allow retry for transient network errors
           // Rejected promises are typically temporary failures that should be retried
+          // Don't add to failed set, as these are transient errors
           loadingPhotoIdsRef.current.delete(photoId);
         }
       });
@@ -236,8 +246,9 @@ export function MealHistory() {
       await syncMealWithQueue(meal, "delete");
       if (meal.photoId) {
         await deleteThumbnail(meal.photoId);
-        // Remove from loading ref when meal is deleted
+        // Remove from both refs when meal is deleted
         loadingPhotoIdsRef.current.delete(meal.photoId);
+        failedPhotoIdsRef.current.delete(meal.photoId);
       }
       setMeals(prev => prev.filter(item => item.id !== meal.id));
     } catch (err) {
