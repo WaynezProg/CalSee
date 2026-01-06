@@ -48,7 +48,22 @@ export function MealHistory() {
         throw new Error("Failed to load meals");
       }
       const data = await response.json();
-      setMeals(data.meals ?? []);
+      const newMeals = data.meals ?? [];
+      setMeals(newMeals);
+      
+      // Clean up loading ref for photoIds that no longer exist in the new meals
+      const currentPhotoIds = new Set(
+        newMeals.map((meal: MealWithThumbnail) => meal.photoId).filter(Boolean) as string[]
+      );
+      const photoIdsToRemove: string[] = [];
+      loadingPhotoIdsRef.current.forEach(photoId => {
+        if (!currentPhotoIds.has(photoId)) {
+          photoIdsToRemove.push(photoId);
+        }
+      });
+      photoIdsToRemove.forEach(photoId => {
+        loadingPhotoIdsRef.current.delete(photoId);
+      });
     } catch (err) {
       setError("Unable to load meal history");
     } finally {
@@ -115,17 +130,25 @@ export function MealHistory() {
           };
 
           const url = (await loadFromCache()) || (await loadFromServer());
-          return { mealId: meal.id, url };
+          return { mealId: meal.id, photoId, url };
         })
       );
 
       if (!isActive) return;
 
-      // Batch update all thumbnails at once
+      // Batch update all thumbnails at once and clean up loading ref
       const urlMap = new Map<string, string>();
-      results.forEach(result => {
+      results.forEach((result, index) => {
+        const meal = mealsToLoad[index];
+        const photoId = meal.photoId!;
+        
         if (result.status === "fulfilled" && result.value.url && result.value.mealId) {
           urlMap.set(result.value.mealId, result.value.url);
+          // Remove from loading ref on success
+          loadingPhotoIdsRef.current.delete(photoId);
+        } else if (result.status === "rejected") {
+          // Remove from loading ref on failure to allow retry
+          loadingPhotoIdsRef.current.delete(photoId);
         }
       });
 
@@ -210,6 +233,8 @@ export function MealHistory() {
       await syncMealWithQueue(meal, "delete");
       if (meal.photoId) {
         await deleteThumbnail(meal.photoId);
+        // Remove from loading ref when meal is deleted
+        loadingPhotoIdsRef.current.delete(meal.photoId);
       }
       setMeals(prev => prev.filter(item => item.id !== meal.id));
     } catch (err) {
