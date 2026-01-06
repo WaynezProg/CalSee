@@ -133,15 +133,21 @@ export function MealHistory() {
         const meal = mealsToLoad[index];
         const photoId = meal.photoId!;
         
-        if (result.status === "fulfilled" && result.value.url && result.value.mealId) {
-          // Only remove from loading ref when we successfully got a valid URL
-          // This prevents infinite retry loops for permanently unavailable photos
-          urlMap.set(result.value.mealId, result.value.url);
-          loadingPhotoIdsRef.current.delete(photoId);
-        } else if (result.status === "fulfilled" && !result.value.url) {
-          // All fallback attempts failed (null URL) - keep photoId in loading set
-          // to prevent infinite retry loops for permanently unavailable photos
-          // The photoId will remain in the set, blocking future retry attempts
+        if (result.status === "fulfilled") {
+          if (result.value.url) {
+            // Successfully loaded a valid URL - always remove from loading ref
+            // regardless of whether mealId exists, to prevent permanent blocking
+            loadingPhotoIdsRef.current.delete(photoId);
+            
+            // Only update urlMap if we have a mealId to map it to
+            if (result.value.mealId) {
+              urlMap.set(result.value.mealId, result.value.url);
+            }
+          } else {
+            // All fallback attempts failed (null URL) - keep photoId in loading set
+            // to prevent infinite retry loops for permanently unavailable photos
+            // The photoId will remain in the set, blocking future retry attempts
+          }
         } else if (result.status === "rejected") {
           // Promise rejected - remove to allow retry for transient network errors
           // Rejected promises are typically temporary failures that should be retried
