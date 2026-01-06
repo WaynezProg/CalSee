@@ -51,9 +51,12 @@ export function MealHistory() {
       const newMeals = data.meals ?? [];
       setMeals(newMeals);
       
-      // Clear loading refs when meals are refreshed to allow retry of transient failures
-      // Keep failed refs to prevent infinite retry loops for permanently unavailable photos
+      // Clear both refs when meals are refreshed to allow retry of previously failed photos
+      // This gives users a chance to retry after network conditions improve or issues are resolved
+      // The refs will be repopulated during the next effect run, preventing infinite retry loops
+      // within the same session while allowing retries across refresh cycles
       loadingPhotoIdsRef.current.clear();
+      failedPhotoIdsRef.current.clear();
     } catch (err) {
       setError("Unable to load meal history");
     } finally {
@@ -67,8 +70,8 @@ export function MealHistory() {
 
   // Track which photoIds are being loaded (use ref to avoid re-triggering effect)
   const loadingPhotoIdsRef = useRef<Set<string>>(new Set());
-  // Track permanently failed photoIds (all fallback attempts returned null)
-  // This persists across refreshes to prevent infinite retry loops
+  // Track failed photoIds (all fallback attempts returned null) within the current session
+  // Cleared on refresh to allow retry, but prevents infinite retry loops within the same effect run
   const failedPhotoIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
@@ -76,7 +79,7 @@ export function MealHistory() {
 
     const loadThumbnails = async () => {
       // Filter to meals with photos that haven't been loaded yet
-      // Skip photos that are currently loading or have permanently failed
+      // Skip photos that are currently loading or have failed in this session
       const mealsToLoad = meals.filter(
         meal => meal.photoId && 
                 !meal.thumbnailUrl && 
@@ -151,9 +154,9 @@ export function MealHistory() {
               urlMap.set(result.value.mealId, result.value.url);
             }
           } else {
-            // All fallback attempts failed (null URL) - mark as permanently failed
+            // All fallback attempts failed (null URL) - mark as failed for this session
             // Remove from loading set and add to failed set to prevent infinite retry loops
-            // Failed set persists across refreshes to prevent retrying permanently unavailable photos
+            // within the same effect run. Failed set is cleared on refresh to allow retry.
             loadingPhotoIdsRef.current.delete(photoId);
             failedPhotoIdsRef.current.add(photoId);
           }
