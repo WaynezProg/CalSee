@@ -270,6 +270,39 @@ export async function getAINutritionEstimate(
 }
 
 /**
+ * Get AI-estimated nutrition data with retry logic.
+ */
+async function getAINutritionEstimateWithRetry(
+  foodName: string,
+  portionSize?: string,
+  maxRetries: number = 2
+): Promise<NutritionServiceResult> {
+  let lastError: NutritionServiceResult['error'];
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const result = await getAINutritionEstimate(foodName, portionSize);
+
+    if (result.success || result.fromCache) {
+      return result;
+    }
+
+    lastError = result.error;
+
+    if (attempt < maxRetries) {
+      await new Promise(resolve => setTimeout(resolve, 800));
+    }
+  }
+
+  return {
+    success: false,
+    error: lastError || {
+      code: 'API_ERROR',
+      message: translate('errors.nutritionFailed'),
+    },
+  };
+}
+
+/**
  * Get nutrition data with AI fallback.
  * First tries USDA database, then falls back to AI estimation.
  *
@@ -290,7 +323,7 @@ export async function getNutritionWithAIFallback(
   }
 
   // If USDA has partial data or no data, try AI estimation
-  const aiResult = await getAINutritionEstimate(foodName, portionSize);
+  const aiResult = await getAINutritionEstimateWithRetry(foodName, portionSize);
 
   if (aiResult.success) {
     return aiResult;
