@@ -16,6 +16,49 @@ import { resolvePortionScale, scaleNutritionValues } from "@/lib/nutrition/porti
 import type { MealItem, SugarLevel, IceLevel } from "@/types/sync";
 import { BeverageOptions } from "./BeverageOptions";
 
+/**
+ * Parse portion input string to number.
+ * Supports:
+ * - Regular numbers: "2", "0.5", "1.5"
+ * - Fractions: "1/2", "3/4"
+ * - Mixed fractions: "1 1/2" → 1.5
+ *
+ * @returns Parsed number or null if invalid
+ */
+function parsePortion(input: string): number | null {
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+
+  // Try regular number first
+  const directParse = Number.parseFloat(trimmed);
+  if (Number.isFinite(directParse)) {
+    return directParse;
+  }
+
+  // Try fraction format: "1/2", "3/4"
+  const fractionMatch = trimmed.match(/^(\d+)\s*\/\s*(\d+)$/);
+  if (fractionMatch) {
+    const numerator = parseInt(fractionMatch[1], 10);
+    const denominator = parseInt(fractionMatch[2], 10);
+    if (denominator !== 0) {
+      return numerator / denominator;
+    }
+  }
+
+  // Try mixed fraction: "1 1/2"
+  const mixedMatch = trimmed.match(/^(\d+)\s+(\d+)\s*\/\s*(\d+)$/);
+  if (mixedMatch) {
+    const whole = parseInt(mixedMatch[1], 10);
+    const numerator = parseInt(mixedMatch[2], 10);
+    const denominator = parseInt(mixedMatch[3], 10);
+    if (denominator !== 0) {
+      return whole + numerator / denominator;
+    }
+  }
+
+  return null;
+}
+
 interface MealItemListProps {
   items: MealItem[];
   onChange: (items: MealItem[]) => void;
@@ -408,26 +451,57 @@ function MealItemCard({
           </label>
           <div className="mt-1 flex items-center gap-2">
             <input
-              type="number"
-              min="0.1"
-              step="0.1"
+              type="text"
+              inputMode="decimal"
               value={portionInput}
               onChange={(e) => {
-                const nextValue = e.target.value;
-                setPortionInput(nextValue);
-                if (!nextValue) return;
-                const parsed = Number.parseFloat(nextValue);
-                if (!Number.isFinite(parsed) || parsed <= 0) return;
-                onUpdate(index, { portionSize: parsed });
+                // Allow free-form input during typing
+                setPortionInput(e.target.value);
               }}
               onBlur={() => {
-                if (portionInput.trim()) return;
-                setPortionInput("1");
-                onUpdate(index, { portionSize: 1 });
+                const trimmed = portionInput.trim();
+                if (!trimmed) {
+                  // Empty input defaults to 1
+                  setPortionInput("1");
+                  onUpdate(index, { portionSize: 1 });
+                  return;
+                }
+                // Parse the input (supports fractions like "1/2")
+                const parsed = parsePortion(trimmed);
+                if (parsed !== null && parsed > 0) {
+                  setPortionInput(`${parsed}`);
+                  onUpdate(index, { portionSize: parsed });
+                } else {
+                  // Invalid input - revert to current value or default
+                  const fallback = item.portionSize ?? 1;
+                  setPortionInput(`${fallback}`);
+                  onUpdate(index, { portionSize: fallback });
+                }
               }}
               disabled={disabled}
               className="w-20 rounded border border-gray-300 px-2 py-1 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
             />
+            {/* Quick portion buttons */}
+            <div className="flex gap-1">
+              {[0.5, 1, 2].map((val) => (
+                <button
+                  key={val}
+                  type="button"
+                  onClick={() => {
+                    setPortionInput(`${val}`);
+                    onUpdate(index, { portionSize: val });
+                  }}
+                  disabled={disabled}
+                  className={`rounded px-2 py-1 text-xs ${
+                    item.portionSize === val
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  } disabled:opacity-50`}
+                >
+                  {val}
+                </button>
+              ))}
+            </div>
             <input
               type="text"
               value={item.portionUnit}

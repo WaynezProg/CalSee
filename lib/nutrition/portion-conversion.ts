@@ -65,7 +65,16 @@ const DEFAULT_UNIT_GRAMS: Record<PortionUnitKey, number> = {
   l: 1000,
 };
 
-const FOOD_UNIT_RULES = [
+type PortionUnitGramsKey = "bowl" | "plate" | "slice" | "piece" | "chunk";
+
+interface FoodUnitRule {
+  name: string;
+  match: RegExp;
+  servingGrams: number;
+  unitGrams: Partial<Record<PortionUnitGramsKey, number>>;
+}
+
+const FOOD_UNIT_RULES: FoodUnitRule[] = [
   {
     name: "rice",
     match: /飯|米飯|炒飯/,
@@ -195,7 +204,7 @@ function normalizeUnit(rawUnit?: string): PortionUnitKey | null {
   return UNIT_ALIASES.get(trimmed) ?? UNIT_ALIASES.get(trimmed.replace(/^一/, "")) ?? null;
 }
 
-function matchFoodRule(foodName: string) {
+function matchFoodRule(foodName: string): FoodUnitRule | undefined {
   const normalized = foodName.trim();
   if (!normalized) return undefined;
   return FOOD_UNIT_RULES.find((rule) => rule.match.test(normalized));
@@ -255,10 +264,14 @@ export function resolvePortionScale(
     shouldApplySize && aiEstimatedWeightGrams && aiEstimatedWeightGrams > 0
       ? aiEstimatedWeightGrams
       : undefined;
+  // Only look up unitGrams from FOOD_UNIT_RULES for compatible keys
+  const isPortionUnitGramsKey = (key: PortionUnitKey): key is PortionUnitGramsKey =>
+    key === "bowl" || key === "plate" || key === "slice" || key === "piece" || key === "chunk";
+  const ruleUnitGrams = isPortionUnitGramsKey(unitKey)
+    ? matchedRule?.unitGrams?.[unitKey]
+    : undefined;
   const unitGrams =
-    (estimatedUnitGrams ??
-      matchedRule?.unitGrams?.[unitKey] ??
-      DEFAULT_UNIT_GRAMS[unitKey]) *
+    (estimatedUnitGrams ?? ruleUnitGrams ?? DEFAULT_UNIT_GRAMS[unitKey]) *
     (shouldApplySize && !estimatedUnitGrams ? sizeMultiplier : 1);
 
   const grams = size * unitGrams;
