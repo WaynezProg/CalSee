@@ -1,5 +1,6 @@
 import type { NextAuthConfig } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
+import { migrateUserData } from "@/lib/auth/user-migration";
 
 export const authOptions: NextAuthConfig = {
   secret: process.env.NEXTAUTH_SECRET,
@@ -45,6 +46,8 @@ export const authOptions: NextAuthConfig = {
         token.email = user.email;
         token.name = user.name;
         token.avatarUrl = user.image;
+
+        await migrateUserData(user.id, primaryUserId);
       }
 
       if (!token.userId && token.email) {
