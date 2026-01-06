@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useI18n } from "@/lib/i18n";
 import type { Meal } from "@/types/sync";
 import { cacheThumbnail, deleteThumbnail, getThumbnail } from "@/lib/db/indexeddb/thumbnail-cache";
@@ -19,6 +19,14 @@ async function fetchSignedUrl(photoId: string, type: "main" | "thumbnail") {
     throw new Error("Signed URL request failed");
   }
   return response.json() as Promise<{ url: string; expiresAt: string }>;
+}
+
+async function fetchPhotoBlob(photoId: string, type: "main" | "thumbnail") {
+  const response = await fetch(`/api/sync/photos/proxy?photoId=${photoId}&type=${type}`);
+  if (!response.ok) {
+    throw new Error("Photo proxy request failed");
+  }
+  return response.blob();
 }
 
 export function MealHistory() {
@@ -52,8 +60,8 @@ export function MealHistory() {
     void loadMeals();
   }, []);
 
-  // Track which photoIds have been loaded to avoid re-fetching
-  const [loadedPhotoIds, setLoadedPhotoIds] = useState<Set<string>>(new Set());
+  // Track which photoIds are being loaded (use ref to avoid re-triggering effect)
+  const loadingPhotoIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     let isActive = true;
@@ -61,17 +69,15 @@ export function MealHistory() {
     const loadThumbnails = async () => {
       // Filter to meals with photos that haven't been loaded yet
       const mealsToLoad = meals.filter(
-        meal => meal.photoId && !meal.thumbnailUrl && !loadedPhotoIds.has(meal.photoId)
+        meal => meal.photoId && !meal.thumbnailUrl && !loadingPhotoIdsRef.current.has(meal.photoId)
       );
 
       if (mealsToLoad.length === 0) return;
 
       // Mark these as being loaded to prevent duplicate fetches
-      const newLoadedIds = new Set(loadedPhotoIds);
       mealsToLoad.forEach(meal => {
-        if (meal.photoId) newLoadedIds.add(meal.photoId);
+        if (meal.photoId) loadingPhotoIdsRef.current.add(meal.photoId);
       });
-      setLoadedPhotoIds(newLoadedIds);
 
       // Load all thumbnails in parallel
       const results = await Promise.allSettled(
@@ -88,19 +94,22 @@ export function MealHistory() {
 
           const loadFromServer = async (): Promise<string | null> => {
             try {
-              const signed = await fetchSignedUrl(photoId, "thumbnail");
-              const response = await fetch(signed.url);
-              if (!response.ok) throw new Error("Thumbnail fetch failed");
-              const blob = await response.blob();
+              const blob = await fetchPhotoBlob(photoId, "thumbnail");
               await cacheThumbnail(photoId, blob);
               return URL.createObjectURL(blob);
             } catch {
               // Fallback to main photo
               try {
-                const signedMain = await fetchSignedUrl(photoId, "main");
-                return signedMain.url;
+                const blob = await fetchPhotoBlob(photoId, "main");
+                return URL.createObjectURL(blob);
               } catch {
-                return null;
+                // Last resort: use signed URL directly in <img>
+                try {
+                  const signed = await fetchSignedUrl(photoId, "thumbnail");
+                  return signed.url;
+                } catch {
+                  return null;
+                }
               }
             }
           };
@@ -136,7 +145,7 @@ export function MealHistory() {
     return () => {
       isActive = false;
     };
-  }, [meals, loadedPhotoIds]);
+  }, [meals]);
 
   useEffect(() => {
     const refreshExpired = async () => {
