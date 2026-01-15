@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import AppLayout from '@/app/components/layout/AppLayout';
 import AppLogo from '@/app/components/ui/AppLogo';
+import WeeklyNutritionReport from '@/app/components/dashboard/WeeklyNutritionReport';
 import { useI18n } from '@/lib/i18n';
 import { getAllMeals, getPhoto } from '@/lib/db/indexeddb';
 import type { Meal as SyncMeal } from '@/types/sync';
@@ -58,10 +59,14 @@ function getSyncMealTotals(meal: SyncMeal): MealTotals {
   );
 
   return {
-    calories: Number.isFinite(meal.totalCalories ?? NaN) ? meal.totalCalories ?? 0 : fallback.calories,
-    protein: Number.isFinite(meal.totalProtein ?? NaN) ? meal.totalProtein ?? 0 : fallback.protein,
-    carbs: Number.isFinite(meal.totalCarbs ?? NaN) ? meal.totalCarbs ?? 0 : fallback.carbs,
-    fats: Number.isFinite(meal.totalFat ?? NaN) ? meal.totalFat ?? 0 : fallback.fats,
+    calories: Number.isFinite(meal.totalCalories ?? NaN)
+      ? (meal.totalCalories ?? 0)
+      : fallback.calories,
+    protein: Number.isFinite(meal.totalProtein ?? NaN)
+      ? (meal.totalProtein ?? 0)
+      : fallback.protein,
+    carbs: Number.isFinite(meal.totalCarbs ?? NaN) ? (meal.totalCarbs ?? 0) : fallback.carbs,
+    fats: Number.isFinite(meal.totalFat ?? NaN) ? (meal.totalFat ?? 0) : fallback.fats,
   };
 }
 
@@ -77,6 +82,7 @@ export default function Home() {
   const { t, locale } = useI18n();
   const { data: session } = useSession();
   const [recentMeals, setRecentMeals] = useState<MealWithPhoto[]>([]);
+  const [allSyncMeals, setAllSyncMeals] = useState<SyncMeal[]>([]);
   const [todaySummary, setTodaySummary] = useState<TodaySummary>({
     calories: 0,
     protein: 0,
@@ -85,6 +91,7 @@ export default function Home() {
     mealCount: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [mealsError, setMealsError] = useState<Error | null>(null);
   const photoUrlsRef = useRef<string[]>([]);
 
   // Load meals on mount
@@ -104,14 +111,14 @@ export default function Home() {
       const allMeals = await getAllMeals();
 
       // Cleanup old URLs
-      photoUrlsRef.current.forEach(url => URL.revokeObjectURL(url));
+      photoUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
       photoUrlsRef.current = [];
 
       // Calculate today's summary
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      const todayMeals = allMeals.filter(meal => {
+      const todayMeals = allMeals.filter((meal) => {
         const mealDate = new Date(meal.createdAt);
         mealDate.setHours(0, 0, 0, 0);
         return mealDate.getTime() === today.getTime();
@@ -125,7 +132,7 @@ export default function Home() {
         mealCount: todayMeals.length,
       };
 
-      todayMeals.forEach(meal => {
+      todayMeals.forEach((meal) => {
         summary.calories += meal.calories || 0;
         summary.protein += meal.protein || 0;
         summary.carbs += meal.carbohydrates || 0;
@@ -156,7 +163,7 @@ export default function Home() {
               createdAt: coerceDate(meal.createdAt),
             };
           }
-        })
+        }),
       );
 
       if (!isActive) return;
@@ -172,7 +179,7 @@ export default function Home() {
       const data = await response.json();
       const meals: SyncMeal[] = data.meals ?? [];
 
-      const mealsWithTotals: MealWithTotals[] = meals.map(meal => ({
+      const mealsWithTotals: MealWithTotals[] = meals.map((meal) => ({
         meal,
         totals: getSyncMealTotals(meal),
         createdAt: coerceDate(meal.timestamp),
@@ -217,11 +224,13 @@ export default function Home() {
       if (!isActive) return;
       setTodaySummary(summary);
       setRecentMeals(mealsWithPhotos);
+      setAllSyncMeals(meals);
     };
 
     const loadMeals = async () => {
       try {
         setIsLoading(true);
+        setMealsError(null);
         if (session?.user?.id) {
           await loadSyncMeals();
         } else {
@@ -229,6 +238,7 @@ export default function Home() {
         }
       } catch (err) {
         console.error('Failed to load meals:', err);
+        setMealsError(err instanceof Error ? err : new Error('Failed to load meals'));
       } finally {
         if (isActive) {
           setIsLoading(false);
@@ -240,25 +250,28 @@ export default function Home() {
 
     return () => {
       isActive = false;
-      photoUrlsRef.current.forEach(url => URL.revokeObjectURL(url));
+      photoUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
       photoUrlsRef.current = [];
     };
   }, [session?.user?.id]);
 
-  const formatTime = useCallback((date: Date) => {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const mealDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    const diffDays = Math.floor((today.getTime() - mealDate.getTime()) / (1000 * 60 * 60 * 24));
-    const timeLabel = date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+  const formatTime = useCallback(
+    (date: Date) => {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const mealDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const diffDays = Math.floor((today.getTime() - mealDate.getTime()) / (1000 * 60 * 60 * 24));
+      const timeLabel = date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
 
-    if (diffDays === 0) {
-      return t('mealHistory.today', { time: timeLabel });
-    } else if (diffDays === 1) {
-      return t('mealHistory.yesterday', { time: timeLabel });
-    }
-    return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
-  }, [locale, t]);
+      if (diffDays === 0) {
+        return t('mealHistory.today', { time: timeLabel });
+      } else if (diffDays === 1) {
+        return t('mealHistory.yesterday', { time: timeLabel });
+      }
+      return date.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
+    },
+    [locale, t],
+  );
 
   const userName = session?.user?.name?.split(' ')[0] || '';
 
@@ -323,13 +336,28 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Quick Add Button */}
+        {session?.user?.id && (
+          <div className="mb-6">
+            <WeeklyNutritionReport
+              meals={allSyncMeals}
+              isLoading={isLoading}
+              error={mealsError}
+              onRetry={() => window.location.reload()}
+            />
+          </div>
+        )}
+
         <Link
           href="/add"
           className="flex items-center justify-center gap-3 w-full bg-blue-500 hover:bg-blue-600 text-white rounded-2xl py-4 px-6 shadow-md transition-colors mb-6"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+            />
           </svg>
           <span className="font-medium text-lg">{t('home.quickAdd')}</span>
         </Link>
@@ -360,8 +388,18 @@ export default function Home() {
           ) : recentMeals.length === 0 ? (
             <div className="bg-white rounded-2xl p-8 text-center">
               <div className="w-16 h-16 mx-auto bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                <svg
+                  className="w-8 h-8 text-blue-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                  />
                 </svg>
               </div>
               <p className="text-slate-700 font-medium mb-1">{t('home.noMealsToday')}</p>
@@ -385,8 +423,18 @@ export default function Home() {
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <svg className="w-6 h-6 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        <svg
+                          className="w-6 h-6 text-slate-300"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.5}
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                          />
                         </svg>
                       </div>
                     )}

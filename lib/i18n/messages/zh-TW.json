@@ -222,6 +222,45 @@
     "iceLevel": "冰塊",
     "sugarCalculation": "{percentage}% = {value}g 糖"
   },
+  "weeklyReport": {
+    "title": "一週營養報告",
+    "period": "過去 7 天",
+    "totalCalories": "總熱量",
+    "dailyAverage": "每日平均",
+    "daysLogged": "已記錄天數",
+    "macroDistribution": "巨量營養素比例",
+    "protein": "蛋白質",
+    "carbs": "碳水化合物",
+    "fat": "脂肪",
+    "emptyState": {
+      "title": "尚無資料",
+      "message": "開始記錄飲食，查看您的一週營養摘要"
+    },
+    "errorState": {
+      "title": "載入失敗",
+      "message": "無法載入營養報告",
+      "retry": "重試"
+    },
+    "recommendations": {
+      "title": "飲食建議",
+      "severe": "建議加強攝取",
+      "moderate": "可適量增加",
+      "adequate": "攝取充足",
+      "noDataTitle": "資料不足",
+      "noDataMessage": "記錄至少 3 天的飲食，即可獲得個人化建議",
+      "goodJobTitle": "營養均衡",
+      "goodJobMessage": "您的飲食攝取很均衡，繼續保持！",
+      "suggestedFoods": "推薦食物",
+      "perDay": "每日建議",
+      "current": "目前攝取",
+      "gap": "差距"
+    },
+    "incompleteData": "部分營養資料不完整，結果僅供參考",
+    "trendChart": {
+      "title": "每日趨勢",
+      "noData": "無資料"
+    }
+  },
   "settings": {
     "title": "設定",
     "accountSection": "帳號",

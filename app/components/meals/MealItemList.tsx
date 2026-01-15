@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 /**
  * MealItemList Component
@@ -9,12 +9,12 @@
  * and progressive nutrition lookup.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useI18n } from "@/lib/i18n";
-import { useNutritionLookup } from "@/lib/nutrition/lookup";
-import { resolvePortionScale, scaleNutritionValues } from "@/lib/nutrition/portion-conversion";
-import type { MealItem, SugarLevel, IceLevel } from "@/types/sync";
-import { BeverageOptions } from "./BeverageOptions";
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useI18n } from '@/lib/i18n';
+import { useNutritionLookup } from '@/lib/nutrition/lookup';
+import { resolvePortionScale, scaleNutritionValues } from '@/lib/nutrition/portion-conversion';
+import type { MealItem, SugarLevel, IceLevel } from '@/types/sync';
+import { BeverageOptions } from './BeverageOptions';
 
 /**
  * Parse portion input string to number.
@@ -80,12 +80,10 @@ export function MealItemList({
 
   const updateItem = useCallback(
     (index: number, patch: Partial<MealItem>) => {
-      const next = items.map((item, idx) =>
-        idx === index ? { ...item, ...patch } : item
-      );
+      const next = items.map((item, idx) => (idx === index ? { ...item, ...patch } : item));
       onChange(next);
     },
-    [items, onChange]
+    [items, onChange],
   );
 
   const removeItem = useCallback(
@@ -97,7 +95,7 @@ export function MealItemList({
       const next = items.filter((_, idx) => idx !== index);
       onChange(next);
     },
-    [items, onChange, minItems]
+    [items, onChange, minItems],
   );
 
   const canRemove = items.length > minItems;
@@ -107,7 +105,7 @@ export function MealItemList({
       {/* Items count header */}
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium text-gray-700">
-          {t("mealForm.items.detected", { count: items.length })}
+          {t('mealForm.items.detected', { count: items.length })}
         </p>
         {onAddItem && (
           <button
@@ -116,7 +114,7 @@ export function MealItemList({
             disabled={disabled}
             className="text-sm text-blue-600 hover:text-blue-800 disabled:opacity-50"
           >
-            + {t("mealForm.items.add")}
+            + {t('mealForm.items.add')}
           </button>
         )}
       </div>
@@ -138,7 +136,7 @@ export function MealItemList({
       {/* Empty state */}
       {items.length === 0 && (
         <div className="rounded-lg border-2 border-dashed border-gray-200 p-6 text-center">
-          <p className="text-sm text-gray-500">{t("mealForm.items.noItems")}</p>
+          <p className="text-sm text-gray-500">{t('mealForm.items.noItems')}</p>
           {onAddItem && (
             <button
               type="button"
@@ -146,7 +144,7 @@ export function MealItemList({
               disabled={disabled}
               className="mt-2 text-sm text-blue-600 hover:text-blue-800"
             >
-              + {t("mealForm.items.add")}
+              + {t('mealForm.items.add')}
             </button>
           )}
         </div>
@@ -154,9 +152,7 @@ export function MealItemList({
 
       {/* Minimum items warning */}
       {!canRemove && items.length === minItems && (
-        <p className="text-xs text-orange-600">
-          {t("mealForm.items.atLeastOneRequired")}
-        </p>
+        <p className="text-xs text-orange-600">{t('mealForm.items.atLeastOneRequired')}</p>
       )}
     </div>
   );
@@ -206,7 +202,7 @@ function MealItemCard({
     item.portionUnit,
     item.containerSize,
     item.aiEstimatedWeightGrams,
-    enableNutritionLookup && item.foodName.trim().length >= 2
+    enableNutritionLookup && item.foodName.trim().length >= 2,
   );
 
   // Reset manual override when food name changes
@@ -219,23 +215,17 @@ function MealItemCard({
   }, [item.foodName]);
 
   useEffect(() => {
-    setPortionInput(item.portionSize ? `${item.portionSize}` : "");
+    setPortionInput(item.portionSize ? `${item.portionSize}` : '');
   }, [item.portionSize]);
 
   useEffect(() => {
     const sizeChanged = item.portionSize !== previousPortionSizeRef.current;
     const unitChanged = item.portionUnit !== previousPortionUnitRef.current;
-    const containerChanged =
-      item.containerSize !== previousContainerSizeRef.current;
+    const containerChanged = item.containerSize !== previousContainerSizeRef.current;
     const aiEstimatedWeightChanged =
       item.aiEstimatedWeightGrams !== previousAiEstimatedWeightRef.current;
 
-    if (
-      !sizeChanged &&
-      !unitChanged &&
-      !containerChanged &&
-      !aiEstimatedWeightChanged
-    ) {
+    if (!sizeChanged && !unitChanged && !containerChanged && !aiEstimatedWeightChanged) {
       return;
     }
 
@@ -255,14 +245,14 @@ function MealItemCard({
         previousSize,
         previousUnit,
         previousContainerSize,
-        previousAiEstimatedWeight
+        previousAiEstimatedWeight,
       ).scale;
       const nextScale = resolvePortionScale(
         item.foodName,
         item.portionSize,
         item.portionUnit,
         item.containerSize,
-        item.aiEstimatedWeightGrams
+        item.aiEstimatedWeightGrams,
       ).scale;
 
       if (previousScale > 0 && nextScale > 0 && previousScale !== nextScale) {
@@ -286,7 +276,7 @@ function MealItemCard({
             vitaminB12: item.vitaminB12,
             cholesterol: item.cholesterol,
           },
-          ratio
+          ratio,
         );
         onUpdate(index, scaledValues);
       }
@@ -331,12 +321,24 @@ function MealItemCard({
 
     if (nutritionResult?.success && nutritionResult.data) {
       const {
-        calories, protein, carbohydrates, fats,
-        fiber, sugar, saturatedFat,
-        sodium, potassium, calcium, iron,
-        vitaminA, vitaminC, vitaminD, vitaminB12,
+        calories,
+        protein,
+        carbohydrates,
+        fats,
+        fiber,
+        sugar,
+        saturatedFat,
+        sodium,
+        potassium,
+        calcium,
+        iron,
+        vitaminA,
+        vitaminC,
+        vitaminD,
+        vitaminB12,
         cholesterol,
-        sourceDatabase, dataComplete
+        sourceDatabase,
+        dataComplete,
       } = nutritionResult.data;
 
       // Only update if we have data and it's different
@@ -395,10 +397,7 @@ function MealItemCard({
 
   const showLoading = enableNutritionLookup && isNutritionLoading;
   const showInsufficientData =
-    enableNutritionLookup &&
-    !isNutritionLoading &&
-    item.calories == null &&
-    !manualNutritionMode;
+    enableNutritionLookup && !isNutritionLoading && item.calories == null && !manualNutritionMode;
 
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
@@ -419,13 +418,13 @@ function MealItemCard({
                 nutritionSource: undefined,
               });
             }}
-            placeholder={t("mealForm.foodNamePlaceholder")}
+            placeholder={t('mealForm.foodNamePlaceholder')}
             disabled={disabled}
             className="w-full border-0 border-b border-gray-200 bg-transparent pb-1 text-lg font-medium text-gray-900 placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-0 disabled:opacity-50"
           />
           {item.confidence != null && (
             <p className="mt-1 text-xs text-gray-500">
-              {t("mealForm.recognitionConfidence", {
+              {t('mealForm.recognitionConfidence', {
                 percent: Math.round(item.confidence * 100),
               })}
             </p>
@@ -438,7 +437,7 @@ function MealItemCard({
             disabled={disabled}
             className="text-sm text-red-500 hover:text-red-700 disabled:opacity-50"
           >
-            {t("mealForm.items.delete")}
+            {t('mealForm.items.delete')}
           </button>
         )}
       </div>
@@ -446,9 +445,7 @@ function MealItemCard({
       {/* Portion size row */}
       <div className="mt-3 grid grid-cols-2 gap-3">
         <div>
-          <label className="text-xs font-medium text-gray-500">
-            {t("mealForm.portionLabel")}
-          </label>
+          <label className="text-xs font-medium text-gray-500">{t('mealForm.portionLabel')}</label>
           <div className="mt-1 flex items-center gap-2">
             <input
               type="text"
@@ -462,7 +459,7 @@ function MealItemCard({
                 const trimmed = portionInput.trim();
                 if (!trimmed) {
                   // Empty input defaults to 1
-                  setPortionInput("1");
+                  setPortionInput('1');
                   onUpdate(index, { portionSize: 1 });
                   return;
                 }
@@ -494,8 +491,8 @@ function MealItemCard({
                   disabled={disabled}
                   className={`rounded px-2 py-1 text-xs ${
                     item.portionSize === val
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   } disabled:opacity-50`}
                 >
                   {val}
@@ -505,9 +502,7 @@ function MealItemCard({
             <input
               type="text"
               value={item.portionUnit}
-              onChange={(e) =>
-                onUpdate(index, { portionUnit: e.target.value })
-              }
+              onChange={(e) => onUpdate(index, { portionUnit: e.target.value })}
               placeholder="份"
               list={`portion-unit-options-${item.id ?? index}`}
               disabled={disabled}
@@ -533,7 +528,7 @@ function MealItemCard({
         {/* Basic nutrition - always visible */}
         <div className="grid grid-cols-4 gap-2">
           <NutritionField
-            label={t("mealForm.caloriesLabel")}
+            label={t('mealForm.caloriesLabel')}
             value={item.calories}
             unit="kcal"
             isLoading={showLoading}
@@ -545,7 +540,7 @@ function MealItemCard({
             disabled={disabled}
           />
           <NutritionField
-            label={t("mealForm.proteinLabel")}
+            label={t('mealForm.proteinLabel')}
             value={item.protein}
             unit="g"
             isLoading={showLoading}
@@ -557,7 +552,7 @@ function MealItemCard({
             disabled={disabled}
           />
           <NutritionField
-            label={t("mealForm.carbsLabel")}
+            label={t('mealForm.carbsLabel')}
             value={item.carbs}
             unit="g"
             isLoading={showLoading}
@@ -569,7 +564,7 @@ function MealItemCard({
             disabled={disabled}
           />
           <NutritionField
-            label={t("mealForm.fatsLabel")}
+            label={t('mealForm.fatsLabel')}
             value={item.fat}
             unit="g"
             isLoading={showLoading}
@@ -588,7 +583,7 @@ function MealItemCard({
           onClick={() => setShowDetailedNutrition(!showDetailedNutrition)}
           className="mt-2 w-full text-center text-xs text-blue-600 hover:text-blue-800"
         >
-          {showDetailedNutrition ? "▲ 收合詳細營養" : "▼ 展開詳細營養"}
+          {showDetailedNutrition ? '▲ 收合詳細營養' : '▼ 展開詳細營養'}
         </button>
 
         {/* Detailed nutrition - collapsible */}
@@ -597,11 +592,11 @@ function MealItemCard({
             {/* Extended macronutrients */}
             <div>
               <p className="mb-2 text-xs font-medium text-gray-600">
-                {t("mealForm.macronutrientsTitle")}
+                {t('mealForm.macronutrientsTitle')}
               </p>
               <div className="grid grid-cols-3 gap-2">
                 <NutritionField
-                  label={t("mealForm.fiberLabel")}
+                  label={t('mealForm.fiberLabel')}
                   value={item.fiber}
                   unit="g"
                   isLoading={showLoading}
@@ -613,7 +608,7 @@ function MealItemCard({
                   disabled={disabled}
                 />
                 <NutritionField
-                  label={t("mealForm.sugarLabel")}
+                  label={t('mealForm.sugarLabel')}
                   value={item.sugar}
                   unit="g"
                   isLoading={showLoading}
@@ -625,7 +620,7 @@ function MealItemCard({
                   disabled={disabled}
                 />
                 <NutritionField
-                  label={t("mealForm.saturatedFatLabel")}
+                  label={t('mealForm.saturatedFatLabel')}
                   value={item.saturatedFat}
                   unit="g"
                   isLoading={showLoading}
@@ -642,11 +637,11 @@ function MealItemCard({
             {/* Minerals */}
             <div>
               <p className="mb-2 text-xs font-medium text-gray-600">
-                {t("mealForm.mineralsTitle")}
+                {t('mealForm.mineralsTitle')}
               </p>
               <div className="grid grid-cols-4 gap-2">
                 <NutritionField
-                  label={t("mealForm.sodiumLabel")}
+                  label={t('mealForm.sodiumLabel')}
                   value={item.sodium}
                   unit="mg"
                   isLoading={showLoading}
@@ -658,7 +653,7 @@ function MealItemCard({
                   disabled={disabled}
                 />
                 <NutritionField
-                  label={t("mealForm.potassiumLabel")}
+                  label={t('mealForm.potassiumLabel')}
                   value={item.potassium}
                   unit="mg"
                   isLoading={showLoading}
@@ -670,7 +665,7 @@ function MealItemCard({
                   disabled={disabled}
                 />
                 <NutritionField
-                  label={t("mealForm.calciumLabel")}
+                  label={t('mealForm.calciumLabel')}
                   value={item.calcium}
                   unit="mg"
                   isLoading={showLoading}
@@ -682,7 +677,7 @@ function MealItemCard({
                   disabled={disabled}
                 />
                 <NutritionField
-                  label={t("mealForm.ironLabel")}
+                  label={t('mealForm.ironLabel')}
                   value={item.iron}
                   unit="mg"
                   isLoading={showLoading}
@@ -699,11 +694,11 @@ function MealItemCard({
             {/* Vitamins */}
             <div>
               <p className="mb-2 text-xs font-medium text-gray-600">
-                {t("mealForm.vitaminsTitle")}
+                {t('mealForm.vitaminsTitle')}
               </p>
               <div className="grid grid-cols-4 gap-2">
                 <NutritionField
-                  label={t("mealForm.vitaminALabel")}
+                  label={t('mealForm.vitaminALabel')}
                   value={item.vitaminA}
                   unit="μg"
                   isLoading={showLoading}
@@ -715,7 +710,7 @@ function MealItemCard({
                   disabled={disabled}
                 />
                 <NutritionField
-                  label={t("mealForm.vitaminCLabel")}
+                  label={t('mealForm.vitaminCLabel')}
                   value={item.vitaminC}
                   unit="mg"
                   isLoading={showLoading}
@@ -727,7 +722,7 @@ function MealItemCard({
                   disabled={disabled}
                 />
                 <NutritionField
-                  label={t("mealForm.vitaminDLabel")}
+                  label={t('mealForm.vitaminDLabel')}
                   value={item.vitaminD}
                   unit="μg"
                   isLoading={showLoading}
@@ -739,7 +734,7 @@ function MealItemCard({
                   disabled={disabled}
                 />
                 <NutritionField
-                  label={t("mealForm.vitaminB12Label")}
+                  label={t('mealForm.vitaminB12Label')}
                   value={item.vitaminB12}
                   unit="μg"
                   isLoading={showLoading}
@@ -756,11 +751,11 @@ function MealItemCard({
             {/* Other */}
             <div>
               <p className="mb-2 text-xs font-medium text-gray-600">
-                {t("mealForm.otherNutrientsTitle")}
+                {t('mealForm.otherNutrientsTitle')}
               </p>
               <div className="grid grid-cols-4 gap-2">
                 <NutritionField
-                  label={t("mealForm.cholesterolLabel")}
+                  label={t('mealForm.cholesterolLabel')}
                   value={item.cholesterol}
                   unit="mg"
                   isLoading={showLoading}
@@ -780,26 +775,22 @@ function MealItemCard({
       {/* Insufficient data message */}
       {showInsufficientData && (
         <div className="mt-2 flex items-center justify-between">
-          <p className="text-xs text-orange-600">
-            {t("mealForm.items.insufficientData")}
-          </p>
+          <p className="text-xs text-orange-600">{t('mealForm.items.insufficientData')}</p>
           <button
             type="button"
             onClick={() => setManualNutritionMode(true)}
             className="text-xs text-blue-600 hover:text-blue-800"
           >
-            {t("mealForm.manualEntry")}
+            {t('mealForm.manualEntry')}
           </button>
         </div>
       )}
 
       {/* Nutrition source indicator */}
-      {item.nutritionSource && !manualNutritionMode && item.nutritionSource !== "manual" && (
+      {item.nutritionSource && !manualNutritionMode && item.nutritionSource !== 'manual' && (
         <p className="mt-2 text-xs text-gray-500">
-          {item.nutritionSource.includes("AI") ? (
-            <span className="text-purple-600">
-              {t("mealForm.aiEstimated")}
-            </span>
+          {item.nutritionSource.includes('AI') ? (
+            <span className="text-purple-600">{t('mealForm.aiEstimated')}</span>
           ) : (
             item.nutritionSource
           )}
@@ -807,7 +798,7 @@ function MealItemCard({
       )}
 
       {/* Beverage options for drinks */}
-      {item.category === "beverage" && (
+      {item.category === 'beverage' && (
         <BeverageOptions
           sugarLevel={item.sugarLevel}
           iceLevel={item.iceLevel}
@@ -830,9 +821,7 @@ function MealItemCard({
       )}
 
       {/* Notes if present */}
-      {item.notes && (
-        <p className="mt-2 text-xs italic text-gray-500">{item.notes}</p>
-      )}
+      {item.notes && <p className="mt-2 text-xs italic text-gray-500">{item.notes}</p>}
     </div>
   );
 }
@@ -877,10 +866,8 @@ function NutritionField({
             type="number"
             min="0"
             step="1"
-            value={value ?? ""}
-            onChange={(e) =>
-              onChange(e.target.value ? parseFloat(e.target.value) : undefined)
-            }
+            value={value ?? ''}
+            onChange={(e) => onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
             disabled={disabled}
             className="w-14 rounded border border-gray-300 px-1 py-0.5 text-center text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
             placeholder="--"
@@ -895,7 +882,7 @@ function NutritionField({
     <div className="text-center">
       <p className="text-xs text-gray-500">{label}</p>
       <p className="text-sm font-medium text-gray-900">
-        {value != null ? `${value}${unit}` : "--"}
+        {value != null ? `${value}${unit}` : '--'}
       </p>
     </div>
   );

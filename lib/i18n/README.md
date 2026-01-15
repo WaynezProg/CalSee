@@ -41,11 +41,11 @@ Use dot notation to access nested keys:
 ```typescript
 // Client-side
 const { t } = useI18n();
-t("mealForm.items.detected", { count: 3 });
+t('mealForm.items.detected', { count: 3 });
 
 // Server-side
-import { translate } from "@/lib/i18n";
-translate("errors.networkError");
+import { translate } from '@/lib/i18n';
+translate('errors.networkError');
 ```
 
 ## Adding New Messages
@@ -64,7 +64,7 @@ translate("errors.networkError");
 
 ```typescript
 const { t } = useI18n();
-const message = t("newNamespace.newKey");
+const message = t('newNamespace.newKey');
 ```
 
 ## Parameterized Messages
@@ -82,7 +82,7 @@ Use `{placeholder}` syntax for dynamic values:
 ```
 
 ```typescript
-t("mealForm.items.detected", { count: 5 });
+t('mealForm.items.detected', { count: 5 });
 // Output: "偵測到 5 個項目"
 ```
 
@@ -97,19 +97,19 @@ To add a new locale (e.g., `en-US`):
 
 ## Key Message Namespaces
 
-| Namespace | Purpose |
-|-----------|---------|
-| `meta` | Page metadata (title, description) |
-| `app` | Application name and tagline |
-| `nav` | Navigation labels |
-| `home` | Home page content |
-| `errors` | Error messages |
-| `camera` | Camera capture UI |
-| `mealForm` | Meal form labels and messages |
-| `mealHistory` | Meal history display |
-| `mealDetail` | Meal detail view |
-| `consent` | Privacy consent dialog |
-| `settings` | Settings page |
+| Namespace     | Purpose                            |
+| ------------- | ---------------------------------- |
+| `meta`        | Page metadata (title, description) |
+| `app`         | Application name and tagline       |
+| `nav`         | Navigation labels                  |
+| `home`        | Home page content                  |
+| `errors`      | Error messages                     |
+| `camera`      | Camera capture UI                  |
+| `mealForm`    | Meal form labels and messages      |
+| `mealHistory` | Meal history display               |
+| `mealDetail`  | Meal detail view                   |
+| `consent`     | Privacy consent dialog             |
+| `settings`    | Settings page                      |
 
 ## Best Practices
 

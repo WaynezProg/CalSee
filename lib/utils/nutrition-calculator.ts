@@ -1,4 +1,4 @@
-import type { MealItem } from "../../types/sync";
+import type { MealItem } from '../../types/sync';
 
 export interface NutritionTotals {
   totalCalories: number;

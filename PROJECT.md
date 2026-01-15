@@ -35,6 +35,7 @@ npx prisma migrate status              # Check migration status
 ## Architecture
 
 ### Data Flow
+
 ```
 Photo Capture → Recognition API → Nutrition Lookup → Storage
      │              │                   │              │
@@ -50,27 +51,27 @@ Photo Capture → Recognition API → Nutrition Lookup → Storage
 
 ### Key Directories
 
-| Directory | Purpose |
-|-----------|---------|
-| `app/api/` | Server routes protecting API keys (recognize, nutrition, auth, sync) |
-| `app/components/meals/` | Multi-item form, nutrition summary, item cards |
-| `lib/recognition/` | Provider abstraction (OpenAI, Gemini), parser, schema |
-| `lib/nutrition/` | USDA lookup with React Query hooks |
-| `lib/db/indexeddb/` | Local persistence, sync queue, thumbnail cache |
-| `lib/services/` | Business logic layer |
-| `types/` | TypeScript type definitions |
+| Directory               | Purpose                                                              |
+| ----------------------- | -------------------------------------------------------------------- |
+| `app/api/`              | Server routes protecting API keys (recognize, nutrition, auth, sync) |
+| `app/components/meals/` | Multi-item form, nutrition summary, item cards                       |
+| `lib/recognition/`      | Provider abstraction (OpenAI, Gemini), parser, schema                |
+| `lib/nutrition/`        | USDA lookup with React Query hooks                                   |
+| `lib/db/indexeddb/`     | Local persistence, sync queue, thumbnail cache                       |
+| `lib/services/`         | Business logic layer                                                 |
+| `types/`                | TypeScript type definitions                                          |
 
 ### Tech Stack
 
-| Category | Technology |
-|----------|------------|
-| Framework | Next.js 16 + React 19 + TypeScript 5 |
-| Styling | Tailwind CSS 4 |
-| Data Fetching | React Query 5 |
-| Database | Prisma 7 + PostgreSQL |
-| Storage | AWS S3 / Cloudflare R2 (photos) |
-| Auth | NextAuth.js 5 beta (Google OAuth) |
-| i18n | next-intl (default: zh-TW) |
+| Category      | Technology                           |
+| ------------- | ------------------------------------ |
+| Framework     | Next.js 16 + React 19 + TypeScript 5 |
+| Styling       | Tailwind CSS 4                       |
+| Data Fetching | React Query 5                        |
+| Database      | Prisma 7 + PostgreSQL                |
+| Storage       | AWS S3 / Cloudflare R2 (photos)      |
+| Auth          | NextAuth.js 5 beta (Google OAuth)    |
+| i18n          | next-intl (default: zh-TW)           |
 
 ---
 
@@ -79,17 +80,20 @@ Photo Capture → Recognition API → Nutrition Lookup → Storage
 ### Prisma Schema (Main Models)
 
 **Meal**
+
 - `userId`, `timestamp`, `photoId`
 - `totalCalories`, `totalProtein`, `totalCarbs`, `totalFat` (cached)
 - `items[]` → MealItem
 
 **MealItem**
+
 - Basic: `foodName`, `portionSize`, `portionUnit`, `containerSize`
 - Nutrition: `calories`, `protein`, `carbs`, `fat` + 12 extended nutrients
 - Beverage: `category`, `sugarLevel`, `iceLevel`, `baseSugar`
 - AI estimates: `aiEstimatedWeightGrams`, `confidence`
 
 **Photo**
+
 - `mainPhotoKey`, `thumbnailKey`
 - `width`, `height`, `mimeType`
 
@@ -97,9 +101,9 @@ Photo Capture → Recognition API → Nutrition Lookup → Storage
 
 ```typescript
 interface RecognitionItem {
-  name: string;              // Food name
-  confidence?: number;       // 0.0-1.0
-  portionUnit?: string;      // "碗", "盤", "杯", "份"
+  name: string; // Food name
+  confidence?: number; // 0.0-1.0
+  portionUnit?: string; // "碗", "盤", "杯", "份"
   category?: 'food' | 'beverage' | 'soup' | 'dessert';
   estimatedCount?: number | string;
   estimatedWeightGrams?: number | string;
@@ -112,13 +116,13 @@ interface RecognitionItem {
 
 ## MCP Server Usage
 
-| Server | Purpose | When to Use |
-|--------|---------|-------------|
-| **Context7** | Library docs & API references | Prioritize over training data when looking up docs |
-| **Semgrep** | Security vulnerability scanning | Scan generated code (auth, input handling, DB) |
-| **Chrome DevTools** | Frontend debugging | DOM inspection, network/performance profiling |
-| **Draw.io** | Architecture diagrams | When visual representation helps explain architecture |
-| **shadcn/ui** | React component code | When working with React/Next.js UI components |
+| Server              | Purpose                         | When to Use                                           |
+| ------------------- | ------------------------------- | ----------------------------------------------------- |
+| **Context7**        | Library docs & API references   | Prioritize over training data when looking up docs    |
+| **Semgrep**         | Security vulnerability scanning | Scan generated code (auth, input handling, DB)        |
+| **Chrome DevTools** | Frontend debugging              | DOM inspection, network/performance profiling         |
+| **Draw.io**         | Architecture diagrams           | When visual representation helps explain architecture |
+| **shadcn/ui**       | React component code            | When working with React/Next.js UI components         |
 
 ---
 
@@ -149,6 +153,7 @@ USDA_API_KEY=           # FoodData Central
 ## Common Patterns
 
 ### API Route Structure
+
 ```typescript
 // app/api/example/route.ts
 export async function POST(request: Request) {
@@ -160,6 +165,7 @@ export async function POST(request: Request) {
 ```
 
 ### React Query Hook Pattern
+
 ```typescript
 // lib/hooks/useExample.ts
 export function useExample(params: Params) {
@@ -172,6 +178,7 @@ export function useExample(params: Params) {
 ```
 
 ### Sync Queue Pattern
+
 ```typescript
 // Local-first, background sync
 await saveToIndexedDB(data);

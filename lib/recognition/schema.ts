@@ -40,7 +40,9 @@ export const MultiItemRecognitionResponseSchema = z.object({
  * Type inference from Zod schema.
  */
 export type RecognitionItemFromSchema = z.infer<typeof RecognitionItemSchema>;
-export type MultiItemRecognitionResponseFromSchema = z.infer<typeof MultiItemRecognitionResponseSchema>;
+export type MultiItemRecognitionResponseFromSchema = z.infer<
+  typeof MultiItemRecognitionResponseSchema
+>;
 
 /**
  * Validation result type.
@@ -59,7 +61,7 @@ export interface ValidationResult<T> {
  * Validate recognition response against schema.
  */
 export function validateRecognitionResponse(
-  data: unknown
+  data: unknown,
 ): ValidationResult<MultiItemRecognitionResponseFromSchema> {
   const result = MultiItemRecognitionResponseSchema.safeParse(data);
 

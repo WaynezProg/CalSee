@@ -1,4 +1,4 @@
-export type AuthStatus = "authenticated" | "unauthenticated" | "loading";
+export type AuthStatus = 'authenticated' | 'unauthenticated' | 'loading';
 
 export interface AuthUser {
   id: string;
@@ -13,14 +13,14 @@ export interface Session {
 }
 
 export type AuthErrorType =
-  | "network"
-  | "service_unavailable"
-  | "permissions_denied"
-  | "session_expired"
-  | "rate_limit_exceeded"
-  | "invalid_session"
-  | "cookies_disabled"
-  | "default";
+  | 'network'
+  | 'service_unavailable'
+  | 'permissions_denied'
+  | 'session_expired'
+  | 'rate_limit_exceeded'
+  | 'invalid_session'
+  | 'cookies_disabled'
+  | 'default';
 
 export interface AuthError {
   type: AuthErrorType;

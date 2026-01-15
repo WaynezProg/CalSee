@@ -81,7 +81,7 @@ function shouldFallback(code: MultiItemRecognitionError): boolean {
 }
 
 export async function POST(
-  request: NextRequest
+  request: NextRequest,
 ): Promise<NextResponse<MultiItemRecognitionApiResponse>> {
   const requestId = crypto.randomUUID();
   const startTime = Date.now();
@@ -154,7 +154,8 @@ export async function POST(
     }
 
     const providers: Array<{ name: string; handler: RecognitionProvider }> = [];
-    const orderedTypes = preferredApiType === 'openai' ? ['openai', 'gemini'] : ['gemini', 'openai'];
+    const orderedTypes =
+      preferredApiType === 'openai' ? ['openai', 'gemini'] : ['gemini', 'openai'];
 
     for (const type of orderedTypes) {
       if (type === 'gemini' && geminiKey) {
@@ -200,11 +201,12 @@ export async function POST(
           continue;
         }
 
-        status = errorCode === MultiItemRecognitionError.INVALID_IMAGE
-          ? 400
-          : errorCode === MultiItemRecognitionError.TIMEOUT
-            ? 504
-            : 500;
+        status =
+          errorCode === MultiItemRecognitionError.INVALID_IMAGE
+            ? 400
+            : errorCode === MultiItemRecognitionError.TIMEOUT
+              ? 504
+              : 500;
         response = {
           success: false,
           error: {

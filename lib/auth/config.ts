@@ -1,22 +1,22 @@
-import type { NextAuthConfig } from "next-auth";
-import GoogleProvider from "next-auth/providers/google";
-import { migrateUserData } from "@/lib/auth/user-migration";
+import type { NextAuthConfig } from 'next-auth';
+import GoogleProvider from 'next-auth/providers/google';
+import { migrateUserData } from '@/lib/auth/user-migration';
 
 export const authOptions: NextAuthConfig = {
   secret: process.env.NEXTAUTH_SECRET,
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID ?? "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+      clientId: process.env.GOOGLE_CLIENT_ID ?? '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
       authorization: {
         params: {
-          scope: "openid email profile",
+          scope: 'openid email profile',
         },
       },
     }),
   ],
   session: {
-    strategy: "jwt",
+    strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60,
     updateAge: 0,
   },
@@ -26,14 +26,14 @@ export const authOptions: NextAuthConfig = {
   cookies: {
     sessionToken: {
       name:
-        process.env.NODE_ENV === "production"
-          ? "__Secure-next-auth.session-token"
-          : "next-auth.session-token",
+        process.env.NODE_ENV === 'production'
+          ? '__Secure-next-auth.session-token'
+          : 'next-auth.session-token',
       options: {
         httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
       },
     },
   },
@@ -50,7 +50,7 @@ export const authOptions: NextAuthConfig = {
         // Migrate user data in background (don't block auth flow)
         // Using void to explicitly ignore the promise
         void migrateUserData(user.id, primaryUserId).catch((err) => {
-          console.warn("[auth] Background migration failed:", err);
+          console.warn('[auth] Background migration failed:', err);
         });
       }
 
@@ -73,7 +73,7 @@ export const authOptions: NextAuthConfig = {
     },
   },
   pages: {
-    signIn: "/signin",
-    error: "/error",
+    signIn: '/signin',
+    error: '/error',
   },
 };

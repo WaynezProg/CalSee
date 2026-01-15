@@ -20,12 +20,7 @@ interface MealDetailProps {
   onDeleted?: () => void;
 }
 
-export default function MealDetail({
-  meal,
-  onClose,
-  onUpdated,
-  onDeleted,
-}: MealDetailProps) {
+export default function MealDetail({ meal, onClose, onUpdated, onDeleted }: MealDetailProps) {
   const { t, locale } = useI18n();
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -57,15 +52,18 @@ export default function MealDetail({
     };
   }, [meal.photoId]);
 
-  const formatDate = useCallback((date: Date) => {
-    return date.toLocaleDateString(locale, {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  }, [locale]);
+  const formatDate = useCallback(
+    (date: Date) => {
+      return date.toLocaleDateString(locale, {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    },
+    [locale],
+  );
 
   const handleEdit = useCallback(() => {
     setIsEditing(true);
@@ -77,34 +75,42 @@ export default function MealDetail({
     setError(null);
   }, []);
 
-  const handleSaveEdit = useCallback(async (formData: MealFormData) => {
-    setIsSaving(true);
-    setError(null);
+  const handleSaveEdit = useCallback(
+    async (formData: MealFormData) => {
+      setIsSaving(true);
+      setError(null);
 
-    try {
-      const updatedMeal: Meal = {
-        ...meal,
-        foodName: formData.foodName,
-        portionSize: formData.portionSize,
-        calories: formData.calories,
-        protein: formData.protein,
-        carbohydrates: formData.carbohydrates,
-        fats: formData.fats,
-        nutritionDataComplete: !!(formData.calories && formData.protein && formData.carbohydrates && formData.fats),
-        updatedAt: new Date(),
-        isManualEntry: formData.isManualEntry,
-      };
+      try {
+        const updatedMeal: Meal = {
+          ...meal,
+          foodName: formData.foodName,
+          portionSize: formData.portionSize,
+          calories: formData.calories,
+          protein: formData.protein,
+          carbohydrates: formData.carbohydrates,
+          fats: formData.fats,
+          nutritionDataComplete: !!(
+            formData.calories &&
+            formData.protein &&
+            formData.carbohydrates &&
+            formData.fats
+          ),
+          updatedAt: new Date(),
+          isManualEntry: formData.isManualEntry,
+        };
 
-      await updateMeal(updatedMeal);
-      setIsEditing(false);
-      onUpdated?.();
-    } catch (err) {
-      console.error('Failed to update meal:', err);
-      setError(t('errors.saveFailed'));
-    } finally {
-      setIsSaving(false);
-    }
-  }, [meal, onUpdated, t]);
+        await updateMeal(updatedMeal);
+        setIsEditing(false);
+        onUpdated?.();
+      } catch (err) {
+        console.error('Failed to update meal:', err);
+        setError(t('errors.saveFailed'));
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [meal, onUpdated, t],
+  );
 
   const handleDelete = useCallback(() => {
     setIsDeleting(true);
@@ -130,11 +136,7 @@ export default function MealDetail({
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50"
-        onClick={onClose}
-        aria-hidden="true"
-      />
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} aria-hidden="true" />
 
       {/* Modal */}
       <div className="relative bg-white w-full sm:max-w-lg sm:rounded-lg overflow-hidden max-h-[90vh] flex flex-col">
@@ -148,12 +150,7 @@ export default function MealDetail({
             className="text-gray-400 hover:text-gray-600"
             aria-label={t('mealDetail.closeLabel')}
           >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -211,7 +208,9 @@ export default function MealDetail({
 
               {/* Nutrition */}
               <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="text-sm font-medium text-gray-700 mb-3">{t('mealDetail.nutritionTitle')}</h4>
+                <h4 className="text-sm font-medium text-gray-700 mb-3">
+                  {t('mealDetail.nutritionTitle')}
+                </h4>
 
                 {/* Calories - Prominent display */}
                 <div className="bg-white rounded-lg p-3 text-center mb-3">
@@ -268,7 +267,11 @@ export default function MealDetail({
                   <p>{t('mealDetail.updatedAt', { time: formatDate(meal.updatedAt) })}</p>
                 )}
                 {meal.recognitionConfidence > 0 && (
-                  <p>{t('mealDetail.confidence', { percent: Math.round(meal.recognitionConfidence * 100) })}</p>
+                  <p>
+                    {t('mealDetail.confidence', {
+                      percent: Math.round(meal.recognitionConfidence * 100),
+                    })}
+                  </p>
                 )}
                 {meal.isManualEntry && (
                   <p className="text-blue-600">{t('mealDetail.manualEntry')}</p>

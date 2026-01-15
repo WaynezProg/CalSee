@@ -1,4 +1,4 @@
-import { openDB, type DBSchema, type IDBPDatabase } from "idb";
+import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 
 interface ThumbnailCacheRecord {
   photoId: string;
@@ -16,8 +16,8 @@ interface ThumbnailCacheSchema extends DBSchema {
   };
 }
 
-const DB_NAME = "CalSeeThumbnailCache";
-const STORE_NAME = "thumbnailCache";
+const DB_NAME = 'CalSeeThumbnailCache';
+const STORE_NAME = 'thumbnailCache';
 const DB_VERSION = 1;
 const CACHE_SIZE_LIMIT_BYTES = 50 * 1024 * 1024;
 const MAX_THUMBNAIL_BYTES = 50 * 1024;
@@ -31,9 +31,9 @@ export async function openThumbnailCacheDB(): Promise<IDBPDatabase<ThumbnailCach
   return openDB<ThumbnailCacheSchema>(DB_NAME, DB_VERSION, {
     upgrade(db) {
       if (!db.objectStoreNames.contains(STORE_NAME)) {
-        const store = db.createObjectStore(STORE_NAME, { keyPath: "photoId" });
-        store.createIndex("cachedTimestamp", "cachedTimestamp");
-        store.createIndex("expirationTimestamp", "expirationTimestamp");
+        const store = db.createObjectStore(STORE_NAME, { keyPath: 'photoId' });
+        store.createIndex('cachedTimestamp', 'cachedTimestamp');
+        store.createIndex('expirationTimestamp', 'expirationTimestamp');
       }
     },
   });
@@ -44,9 +44,12 @@ async function getCacheSize(db: IDBPDatabase<ThumbnailCacheSchema>): Promise<num
   return records.reduce((total, record) => total + record.size, 0);
 }
 
-async function evictOldest(db: IDBPDatabase<ThumbnailCacheSchema>, targetBytes: number): Promise<void> {
-  const tx = db.transaction(STORE_NAME, "readwrite");
-  const index = tx.store.index("cachedTimestamp");
+async function evictOldest(
+  db: IDBPDatabase<ThumbnailCacheSchema>,
+  targetBytes: number,
+): Promise<void> {
+  const tx = db.transaction(STORE_NAME, 'readwrite');
+  const index = tx.store.index('cachedTimestamp');
   let remaining = targetBytes;
 
   let cursor = await index.openCursor();
@@ -78,9 +81,13 @@ export async function getThumbnail(photoId: string): Promise<Blob | null> {
   return record.thumbnailBlob;
 }
 
-export async function cacheThumbnail(photoId: string, blob: Blob, ttlMs = DEFAULT_TTL_MS): Promise<void> {
+export async function cacheThumbnail(
+  photoId: string,
+  blob: Blob,
+  ttlMs = DEFAULT_TTL_MS,
+): Promise<void> {
   if (blob.size > MAX_THUMBNAIL_BYTES) {
-    throw new Error("Thumbnail exceeds size limit");
+    throw new Error('Thumbnail exceeds size limit');
   }
 
   const db = await openThumbnailCacheDB();

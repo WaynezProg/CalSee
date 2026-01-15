@@ -1,4 +1,4 @@
-import type { NextRequest } from "next/server";
+import type { NextRequest } from 'next/server';
 
 interface RateLimitRecord {
   count: number;
@@ -17,12 +17,12 @@ const rateLimitMap = new Map<string, RateLimitRecord>();
 export function rateLimit(
   request: NextRequest,
   maxRequests = 5,
-  windowMs = 60_000
+  windowMs = 60_000,
 ): RateLimitResult {
   const ip =
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    request.headers.get("x-real-ip") ||
-    "unknown";
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    request.headers.get('x-real-ip') ||
+    'unknown';
   const now = Date.now();
   const record = rateLimitMap.get(ip);
 
@@ -57,8 +57,8 @@ export function rateLimit(
 
 export function getRateLimitHeaders(result: RateLimitResult): HeadersInit {
   return {
-    "X-RateLimit-Limit": result.limit.toString(),
-    "X-RateLimit-Remaining": result.remaining.toString(),
-    "X-RateLimit-Reset": Math.ceil(result.resetTime / 1000).toString(),
+    'X-RateLimit-Limit': result.limit.toString(),
+    'X-RateLimit-Remaining': result.remaining.toString(),
+    'X-RateLimit-Reset': Math.ceil(result.resetTime / 1000).toString(),
   };
 }

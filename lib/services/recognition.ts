@@ -53,7 +53,7 @@ interface RecognitionServiceResult {
  */
 export async function recognizeFood(
   imageBlob: Blob,
-  hasConsent: boolean
+  hasConsent: boolean,
 ): Promise<RecognitionServiceResult> {
   // Require consent
   if (!hasConsent) {
@@ -143,7 +143,7 @@ export async function recognizeFood(
 export async function recognizeFoodWithRetry(
   imageBlob: Blob,
   hasConsent: boolean,
-  maxRetries: number = 2
+  maxRetries: number = 2,
 ): Promise<RecognitionServiceResult> {
   let lastError: RecognitionServiceResult['error'];
 
@@ -167,7 +167,7 @@ export async function recognizeFoodWithRetry(
 
     // Wait before retry (exponential backoff)
     if (attempt < maxRetries) {
-      await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 500));
+      await new Promise((resolve) => setTimeout(resolve, Math.pow(2, attempt) * 500));
     }
   }
 
@@ -192,7 +192,7 @@ export async function recognizeFoodWithRetry(
 export async function recognizeMultipleFood(
   imageBlob: Blob,
   hasConsent: boolean,
-  locale: SupportedLocale = DEFAULT_LOCALE
+  locale: SupportedLocale = DEFAULT_LOCALE,
 ): Promise<MultiItemRecognitionServiceResult> {
   // Require consent
   if (!hasConsent) {
@@ -238,7 +238,10 @@ export async function recognizeMultipleFood(
         };
       } else {
         // When success is false, error exists on the response
-        const errorResponse = result as { success: false; error: { code: MultiItemRecognitionError; message: string } };
+        const errorResponse = result as {
+          success: false;
+          error: { code: MultiItemRecognitionError; message: string };
+        };
         return {
           success: false,
           error: errorResponse.error || {
@@ -287,7 +290,7 @@ export async function recognizeMultipleFoodWithRetry(
   imageBlob: Blob,
   hasConsent: boolean,
   locale: SupportedLocale = DEFAULT_LOCALE,
-  maxRetries: number = 2
+  maxRetries: number = 2,
 ): Promise<MultiItemRecognitionServiceResult> {
   let lastError: MultiItemRecognitionServiceResult['error'];
 
@@ -311,7 +314,7 @@ export async function recognizeMultipleFoodWithRetry(
 
     // Wait before retry (exponential backoff)
     if (attempt < maxRetries) {
-      await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 500));
+      await new Promise((resolve) => setTimeout(resolve, Math.pow(2, attempt) * 500));
     }
   }
 

@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-export type SyncStatusType = "failed" | "conflict" | "quota_exceeded";
+export type SyncStatusType = 'failed' | 'conflict' | 'quota_exceeded';
 
 interface SyncStatusProps {
   status?: SyncStatusType | null;
@@ -8,9 +8,9 @@ interface SyncStatusProps {
 }
 
 const defaultMessages: Record<SyncStatusType, string> = {
-  failed: "Sync failed. Changes will retry in the background.",
-  conflict: "A newer version was found. Your view was updated to the latest version.",
-  quota_exceeded: "Cloud storage quota exceeded. Please free space and try again.",
+  failed: 'Sync failed. Changes will retry in the background.',
+  conflict: 'A newer version was found. Your view was updated to the latest version.',
+  quota_exceeded: 'Cloud storage quota exceeded. Please free space and try again.',
 };
 
 export function SyncStatus({ status, message }: SyncStatusProps) {

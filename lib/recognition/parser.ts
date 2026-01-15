@@ -148,7 +148,7 @@ export function parseAndValidate(rawJson: string): ParseResult {
  */
 export function truncateItems<T extends { confidence?: number }>(
   items: T[],
-  maxItems: number = 6
+  maxItems: number = 6,
 ): T[] {
   if (items.length <= maxItems) {
     return items;

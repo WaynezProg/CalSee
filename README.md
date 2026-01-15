@@ -1,4 +1,5 @@
 # CalSee
+
 [![Demo Video](https://img.youtube.com/vi/QGiLpQ6wZDE/0.jpg)](https://youtube.com/shorts/QGiLpQ6wZDE)
 
 > 💡 **Click the image above to watch the full demo video** showing the complete workflow of the application.
@@ -42,6 +43,7 @@ CalSee is a Next.js proof-of-concept for logging meals by photo. It compresses i
 ### Recognition API (Choose One)
 
 **Option 1: OpenAI Vision API (Recommended)**
+
 1. Sign up at [platform.openai.com](https://platform.openai.com/signup)
 2. Go to [API Keys](https://platform.openai.com/api-keys)
 3. Click "Create new secret key"
@@ -50,6 +52,7 @@ CalSee is a Next.js proof-of-concept for logging meals by photo. It compresses i
 > Note: Requires payment method. See [pricing](https://openai.com/pricing).
 
 **Option 2: Google Gemini API**
+
 1. Create a project in [Google AI Studio](https://aistudio.google.com/)
 2. Create an API key
 3. Set `RECOGNITION_API_TYPE=gemini`
@@ -60,6 +63,7 @@ CalSee is a Next.js proof-of-concept for logging meals by photo. It compresses i
 ### Nutrition API
 
 **USDA FoodData Central API (Free)**
+
 1. Go to [API Key Signup](https://fdc.nal.usda.gov/api-key-signup.html)
 2. Enter your name and email
 3. Check your email for the API key (arrives within minutes)

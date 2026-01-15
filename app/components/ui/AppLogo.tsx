@@ -2,7 +2,7 @@
 
 /**
  * AppLogo Component
- * 
+ *
  * Displays the CalSee logo using download.svg
  */
 
@@ -23,4 +23,3 @@ export default function AppLogo() {
     </div>
   );
 }
-

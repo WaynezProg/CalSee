@@ -39,8 +39,9 @@ export default function AddMealPage() {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
 
   // Recognition state
-  const [recognitionResult, setRecognitionResult] =
-    useState<MultiItemRecognitionResponse | null>(null);
+  const [recognitionResult, setRecognitionResult] = useState<MultiItemRecognitionResponse | null>(
+    null,
+  );
   const [isRecognizing, setIsRecognizing] = useState(false);
 
   // Consent state
@@ -77,55 +78,61 @@ export default function AddMealPage() {
   }, [photoBlob]);
 
   // Handle image captured
-  const handleImageCaptured = useCallback((blob: Blob) => {
-    setPhotoBlob(blob);
-    setPhotoFile(
-      new File([blob], `meal-${Date.now()}.jpg`, {
-        type: blob.type || 'image/jpeg',
-      })
-    );
-    setError(null);
+  const handleImageCaptured = useCallback(
+    (blob: Blob) => {
+      setPhotoBlob(blob);
+      setPhotoFile(
+        new File([blob], `meal-${Date.now()}.jpg`, {
+          type: blob.type || 'image/jpeg',
+        }),
+      );
+      setError(null);
 
-    // Check if we need consent
-    if (hasConsent === false) {
-      setShowConsentDialog(true);
-      setPendingRecognition(true);
-    } else if (hasConsent === true) {
-      // Start recognition immediately
-      startRecognition(blob);
-    }
-  }, [hasConsent]);
+      // Check if we need consent
+      if (hasConsent === false) {
+        setShowConsentDialog(true);
+        setPendingRecognition(true);
+      } else if (hasConsent === true) {
+        // Start recognition immediately
+        startRecognition(blob);
+      }
+    },
+    [hasConsent],
+  );
 
   // Start recognition process
-  const startRecognition = useCallback(async (blob: Blob) => {
-    setStep('processing');
-    setIsRecognizing(true);
-    setError(null);
+  const startRecognition = useCallback(
+    async (blob: Blob) => {
+      setStep('processing');
+      setIsRecognizing(true);
+      setError(null);
 
-    try {
-      const result = await recognizeMultipleFoodWithRetry(blob, true);
+      try {
+        const result = await recognizeMultipleFoodWithRetry(blob, true);
 
-      if (result.success && result.data) {
-        setRecognitionResult(result.data);
-        setStep('confirm');
-      } else {
-        // Recognition failed - stay on processing step and show error with retry option
-        setRecognitionResult(null);
-        if (result.error?.code === 'NO_FOOD_DETECTED') {
-          // No food detected - go to confirm for manual entry
+        if (result.success && result.data) {
+          setRecognitionResult(result.data);
           setStep('confirm');
         } else {
-          // Other errors (timeout, network) - allow retry
-          setError(result.error?.message || t('errors.recognitionFailedManual'));
+          // Recognition failed - stay on processing step and show error with retry option
+          setRecognitionResult(null);
+          if (result.error?.code === 'NO_FOOD_DETECTED') {
+            // No food detected - go to confirm for manual entry
+            setStep('confirm');
+          } else {
+            // Other errors (timeout, network) - allow retry
+            setError(result.error?.message || t('errors.recognitionFailedManual'));
+          }
         }
+      } catch (err) {
+        console.error('Recognition error:', err);
+        setError(t('errors.recognitionErrorManual'));
+      } finally {
+        setIsRecognizing(false);
       }
-    } catch (err) {
-      console.error('Recognition error:', err);
-      setError(t('errors.recognitionErrorManual'));
-    } finally {
-      setIsRecognizing(false);
-    }
-  }, [t]);
+    },
+    [t],
+  );
 
   // Handle retry recognition
   const handleRetryRecognition = useCallback(() => {
@@ -238,10 +245,7 @@ export default function AddMealPage() {
               <h2 className="text-lg font-medium text-slate-800">{t('home.logMealTitle')}</h2>
               <p className="text-sm text-slate-500 mt-1">{t('home.logMealSubtitle')}</p>
             </div>
-            <CameraCapture
-              onImageCaptured={handleImageCaptured}
-              onError={handleImageError}
-            />
+            <CameraCapture onImageCaptured={handleImageCaptured} onError={handleImageError} />
             <div className="text-center pt-4 border-t border-slate-100">
               <button
                 type="button"
@@ -383,7 +387,6 @@ export default function AddMealPage() {
             </div>
           </div>
         )}
-
       </main>
 
       {/* Consent Dialog */}

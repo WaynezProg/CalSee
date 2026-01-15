@@ -17,7 +17,12 @@ export {
 export { parseAndValidate, truncateItems, type ParseResult } from './parser';
 
 // Prompt builder
-export { buildRecognitionPrompt, buildSystemPrompt, buildUserPrompt, type RecognitionPrompt } from './prompt';
+export {
+  buildRecognitionPrompt,
+  buildSystemPrompt,
+  buildUserPrompt,
+  type RecognitionPrompt,
+} from './prompt';
 
 // Provider abstraction
 export { RecognitionProvider, type ProviderConfig, type ProviderResponse } from './provider/base';

@@ -1,15 +1,15 @@
-import { v4 as uuidv4 } from "uuid";
-import type { Meal } from "@/types/sync";
+import { v4 as uuidv4 } from 'uuid';
+import type { Meal } from '@/types/sync';
 import {
   addSyncQueueItem,
   getDueSyncQueueItems,
   markSyncQueueItemCompleted,
   removeSyncQueueItem,
   updateSyncQueueItem,
-} from "@/lib/db/indexeddb/sync-queue";
+} from '@/lib/db/indexeddb/sync-queue';
 
 const MAX_RETRY_DELAY_MS = 60_000;
-const SYNC_DEBUG = process.env.NEXT_PUBLIC_SYNC_DEBUG === "true";
+const SYNC_DEBUG = process.env.NEXT_PUBLIC_SYNC_DEBUG === 'true';
 
 type SyncMetric = {
   successCount: number;
@@ -28,7 +28,7 @@ const syncMetrics: SyncMetric = {
 class SyncError extends Error {
   constructor(
     message: string,
-    public code: "failed" | "conflict" | "quota_exceeded" = "failed",
+    public code: 'failed' | 'conflict' | 'quota_exceeded' = 'failed',
   ) {
     super(message);
   }
@@ -40,34 +40,34 @@ function getBackoffDelay(retryCount: number) {
 
 export async function syncMealCreate(meal: Meal): Promise<Meal> {
   const start = performance.now();
-  const response = await fetch("/api/sync/meals", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+  const response = await fetch('/api/sync/meals', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(meal),
   });
 
   if (!response.ok) {
     syncMetrics.failureCount += 1;
-    throw new SyncError("Meal sync failed");
+    throw new SyncError('Meal sync failed');
   }
 
   const data = await response.json();
   syncMetrics.successCount += 1;
   syncMetrics.totalDurationMs += performance.now() - start;
   if (SYNC_DEBUG) {
-    console.info("[sync]", { operation: "create", durationMs: performance.now() - start });
+    console.info('[sync]', { operation: 'create', durationMs: performance.now() - start });
   }
   return data;
 }
 
-export async function enqueueMealSync(meal: Meal, operationType: "create" | "update" | "delete") {
+export async function enqueueMealSync(meal: Meal, operationType: 'create' | 'update' | 'delete') {
   const now = Date.now();
   await addSyncQueueItem({
     operationId: uuidv4(),
     operationType,
-    mealId: meal.id ?? "",
+    mealId: meal.id ?? '',
     localData: meal,
-    status: "pending",
+    status: 'pending',
     retryCount: 0,
     nextRetryAt: now,
     createdAt: now,
@@ -75,37 +75,37 @@ export async function enqueueMealSync(meal: Meal, operationType: "create" | "upd
   });
 }
 
-export async function syncMealWithQueue(meal: Meal, operationType: "create" | "update" | "delete") {
-  if (operationType !== "create" && !meal.id) {
-    throw new Error("Meal id is required for update/delete sync");
+export async function syncMealWithQueue(meal: Meal, operationType: 'create' | 'update' | 'delete') {
+  if (operationType !== 'create' && !meal.id) {
+    throw new Error('Meal id is required for update/delete sync');
   }
 
   try {
-    if (operationType === "create") {
+    if (operationType === 'create') {
       return await syncMealCreate(meal);
     }
 
     const start = performance.now();
     const response = await fetch(`/api/sync/meals/${meal.id}`, {
-      method: operationType === "update" ? "PUT" : "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: operationType === "update" ? JSON.stringify(meal) : undefined,
+      method: operationType === 'update' ? 'PUT' : 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: operationType === 'update' ? JSON.stringify(meal) : undefined,
     });
 
     if (!response.ok) {
       if (response.status === 409) {
         syncMetrics.conflictCount += 1;
-        throw new SyncError("Meal conflict detected", "conflict");
+        throw new SyncError('Meal conflict detected', 'conflict');
       }
       syncMetrics.failureCount += 1;
-      throw new SyncError("Meal sync failed");
+      throw new SyncError('Meal sync failed');
     }
 
-    const payload = operationType === "delete" ? undefined : await response.json();
+    const payload = operationType === 'delete' ? undefined : await response.json();
     syncMetrics.successCount += 1;
     syncMetrics.totalDurationMs += performance.now() - start;
     if (SYNC_DEBUG) {
-      console.info("[sync]", { operation: operationType, durationMs: performance.now() - start });
+      console.info('[sync]', { operation: operationType, durationMs: performance.now() - start });
     }
     return payload;
   } catch (error) {
@@ -122,21 +122,21 @@ export async function processSyncQueue(): Promise<void> {
     const updatedAt = Date.now();
     await updateSyncQueueItem({
       ...item,
-      status: "syncing",
+      status: 'syncing',
       updatedAt,
     });
 
     try {
-      if (item.operationType === "create") {
+      if (item.operationType === 'create') {
         await syncMealCreate(item.localData as Meal);
-      } else if (item.operationType === "update") {
+      } else if (item.operationType === 'update') {
         await fetch(`/api/sync/meals/${item.mealId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(item.localData),
         });
-      } else if (item.operationType === "delete") {
-        await fetch(`/api/sync/meals/${item.mealId}`, { method: "DELETE" });
+      } else if (item.operationType === 'delete') {
+        await fetch(`/api/sync/meals/${item.mealId}`, { method: 'DELETE' });
       }
 
       await markSyncQueueItemCompleted(item.operationId);
@@ -146,7 +146,7 @@ export async function processSyncQueue(): Promise<void> {
       const retryDelay = getBackoffDelay(item.retryCount + 1);
       await updateSyncQueueItem({
         ...item,
-        status: "failed",
+        status: 'failed',
         retryCount: item.retryCount + 1,
         nextRetryAt: Date.now() + retryDelay,
         updatedAt: Date.now(),

@@ -36,7 +36,7 @@ const DEFAULT_OPTIONS: Required<CompressionOptions> = {
  */
 export async function compressImage(
   file: File | Blob,
-  options: CompressionOptions = {}
+  options: CompressionOptions = {},
 ): Promise<CompressionResult> {
   const opts = { ...DEFAULT_OPTIONS, ...options };
   const originalSize = file.size;
@@ -49,7 +49,7 @@ export async function compressImage(
     image.width,
     image.height,
     opts.maxWidth,
-    opts.maxHeight
+    opts.maxHeight,
   );
 
   // Create canvas and draw resized image
@@ -110,7 +110,7 @@ function calculateDimensions(
   originalWidth: number,
   originalHeight: number,
   maxWidth: number,
-  maxHeight: number
+  maxHeight: number,
 ): { width: number; height: number } {
   let width = originalWidth;
   let height = originalHeight;
@@ -132,11 +132,7 @@ function calculateDimensions(
 /**
  * Convert canvas to Blob.
  */
-function canvasToBlob(
-  canvas: HTMLCanvasElement,
-  mimeType: string,
-  quality: number
-): Promise<Blob> {
+function canvasToBlob(canvas: HTMLCanvasElement, mimeType: string, quality: number): Promise<Blob> {
   return new Promise((resolve, reject) => {
     canvas.toBlob(
       (blob) => {
@@ -147,7 +143,7 @@ function canvasToBlob(
         }
       },
       mimeType,
-      quality
+      quality,
     );
   });
 }

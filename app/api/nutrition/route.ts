@@ -84,13 +84,16 @@ export async function GET(request: NextRequest): Promise<NextResponse<NutritionR
 
     // Validate food parameter
     if (!food || food.trim() === '') {
-      return NextResponse.json({
-        success: false,
-        error: {
-          code: 'INVALID_REQUEST',
-          message: translate('errors.invalidFoodName'),
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'INVALID_REQUEST',
+            message: translate('errors.invalidFoodName'),
+          },
         },
-      }, { status: 400 });
+        { status: 400 },
+      );
     }
 
     // Check API key configuration
@@ -98,13 +101,16 @@ export async function GET(request: NextRequest): Promise<NextResponse<NutritionR
 
     if (!apiKey) {
       console.error('Nutrition API key not configured');
-      return NextResponse.json({
-        success: false,
-        error: {
-          code: 'API_ERROR',
-          message: translate('errors.nutritionUnavailable'),
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'API_ERROR',
+            message: translate('errors.nutritionUnavailable'),
+          },
         },
-      }, { status: 500 });
+        { status: 500 },
+      );
     }
 
     // Call USDA FoodData Central API
@@ -113,23 +119,23 @@ export async function GET(request: NextRequest): Promise<NextResponse<NutritionR
     return NextResponse.json(result);
   } catch (error) {
     console.error('Nutrition API error:', error);
-    return NextResponse.json({
-      success: false,
-      error: {
-        code: 'API_ERROR',
-        message: translate('errors.nutritionFailedRetry'),
+    return NextResponse.json(
+      {
+        success: false,
+        error: {
+          code: 'API_ERROR',
+          message: translate('errors.nutritionFailedRetry'),
+        },
       },
-    }, { status: 500 });
+      { status: 500 },
+    );
   }
 }
 
 /**
  * Call USDA FoodData Central API for nutrition data.
  */
-async function callUSDAApi(
-  foodName: string,
-  apiKey: string
-): Promise<NutritionResponse> {
+async function callUSDAApi(foodName: string, apiKey: string): Promise<NutritionResponse> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 2000);
 
@@ -204,7 +210,8 @@ async function callUSDAApi(
     const cholesterol = findNutrient(nutrients, NUTRIENT_IDS.CHOLESTEROL);
 
     // Basic macros must be present for dataComplete
-    const dataComplete = calories !== undefined &&
+    const dataComplete =
+      calories !== undefined &&
       protein !== undefined &&
       carbohydrates !== undefined &&
       fats !== undefined;
@@ -215,7 +222,8 @@ async function callUSDAApi(
         // Basic macronutrients
         calories: calories !== undefined ? Math.round(calories) : undefined,
         protein: protein !== undefined ? Math.round(protein * 10) / 10 : undefined,
-        carbohydrates: carbohydrates !== undefined ? Math.round(carbohydrates * 10) / 10 : undefined,
+        carbohydrates:
+          carbohydrates !== undefined ? Math.round(carbohydrates * 10) / 10 : undefined,
         fats: fats !== undefined ? Math.round(fats * 10) / 10 : undefined,
         // Extended macronutrients
         fiber: fiber !== undefined ? Math.round(fiber * 10) / 10 : undefined,
@@ -257,8 +265,8 @@ async function callUSDAApi(
  */
 function findNutrient(
   nutrients: Array<{ nutrientId: number; value: number }>,
-  nutrientId: number
+  nutrientId: number,
 ): number | undefined {
-  const nutrient = nutrients.find(n => n.nutrientId === nutrientId);
+  const nutrient = nutrients.find((n) => n.nutrientId === nutrientId);
   return nutrient?.value;
 }

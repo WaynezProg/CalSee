@@ -55,13 +55,16 @@ export async function POST(request: NextRequest): Promise<NextResponse<Nutrition
 
     // Validate food name
     if (!body.foodName || body.foodName.trim() === '') {
-      return NextResponse.json({
-        success: false,
-        error: {
-          code: 'INVALID_REQUEST',
-          message: translate('errors.invalidFoodName'),
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'INVALID_REQUEST',
+            message: translate('errors.invalidFoodName'),
+          },
         },
-      }, { status: 400 });
+        { status: 400 },
+      );
     }
 
     // Check API key configuration
@@ -69,13 +72,16 @@ export async function POST(request: NextRequest): Promise<NextResponse<Nutrition
 
     if (!apiKey) {
       console.error('OpenAI API key not configured');
-      return NextResponse.json({
-        success: false,
-        error: {
-          code: 'API_ERROR',
-          message: translate('errors.nutritionUnavailable'),
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: 'API_ERROR',
+            message: translate('errors.nutritionUnavailable'),
+          },
         },
-      }, { status: 500 });
+        { status: 500 },
+      );
     }
 
     // Call OpenAI for nutrition estimation
@@ -84,13 +90,16 @@ export async function POST(request: NextRequest): Promise<NextResponse<Nutrition
     return NextResponse.json(result);
   } catch (error) {
     console.error('AI Nutrition API error:', error);
-    return NextResponse.json({
-      success: false,
-      error: {
-        code: 'API_ERROR',
-        message: translate('errors.nutritionFailedRetry'),
+    return NextResponse.json(
+      {
+        success: false,
+        error: {
+          code: 'API_ERROR',
+          message: translate('errors.nutritionFailedRetry'),
+        },
       },
-    }, { status: 500 });
+      { status: 500 },
+    );
   }
 }
 
@@ -100,7 +109,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<Nutrition
 async function estimateNutritionWithAI(
   foodName: string,
   portionSize: string | undefined,
-  apiKey: string
+  apiKey: string,
 ): Promise<NutritionAIResponse> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds for detailed nutrition
@@ -112,7 +121,7 @@ async function estimateNutritionWithAI(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         model: 'gpt-4o-mini',
@@ -197,7 +206,8 @@ Use reasonable estimates based on typical nutritional data. All values must be n
       };
 
       // Macronutrients
-      const calories = typeof parsed.calories === 'number' ? Math.round(parsed.calories) : undefined;
+      const calories =
+        typeof parsed.calories === 'number' ? Math.round(parsed.calories) : undefined;
       const protein = parseNum(parsed.protein);
       const carbohydrates = parseNum(parsed.carbohydrates);
       const fats = parseNum(parsed.fats);
@@ -207,20 +217,24 @@ Use reasonable estimates based on typical nutritional data. All values must be n
 
       // Minerals (in mg, round to whole numbers)
       const sodium = typeof parsed.sodium === 'number' ? Math.round(parsed.sodium) : undefined;
-      const potassium = typeof parsed.potassium === 'number' ? Math.round(parsed.potassium) : undefined;
+      const potassium =
+        typeof parsed.potassium === 'number' ? Math.round(parsed.potassium) : undefined;
       const calcium = typeof parsed.calcium === 'number' ? Math.round(parsed.calcium) : undefined;
       const iron = parseNum(parsed.iron);
 
       // Vitamins
-      const vitaminA = typeof parsed.vitaminA === 'number' ? Math.round(parsed.vitaminA) : undefined;
+      const vitaminA =
+        typeof parsed.vitaminA === 'number' ? Math.round(parsed.vitaminA) : undefined;
       const vitaminC = parseNum(parsed.vitaminC);
       const vitaminD = parseNum(parsed.vitaminD);
       const vitaminB12 = parseNum(parsed.vitaminB12, 2);
 
       // Other
-      const cholesterol = typeof parsed.cholesterol === 'number' ? Math.round(parsed.cholesterol) : undefined;
+      const cholesterol =
+        typeof parsed.cholesterol === 'number' ? Math.round(parsed.cholesterol) : undefined;
 
-      const dataComplete = calories !== undefined &&
+      const dataComplete =
+        calories !== undefined &&
         protein !== undefined &&
         carbohydrates !== undefined &&
         fats !== undefined;

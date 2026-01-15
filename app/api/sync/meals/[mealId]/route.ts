@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
-import { auth } from "@/auth";
-import { prisma } from "@/lib/db/prisma/client";
-import { deletePhoto } from "@/lib/db/s3/client";
-import { calculateNutritionTotals } from "@/lib/utils/nutrition-calculator";
+import { NextResponse } from 'next/server';
+import { auth } from '@/auth';
+import { prisma } from '@/lib/db/prisma/client';
+import { deletePhoto } from '@/lib/db/s3/client';
+import { calculateNutritionTotals } from '@/lib/utils/nutrition-calculator';
 
 interface RouteParams {
   params: Promise<{ mealId: string }>;
@@ -11,7 +11,7 @@ interface RouteParams {
 export async function DELETE(request: Request, { params }: RouteParams) {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "unauthorized", message: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: 'unauthorized', message: 'Unauthorized' }, { status: 401 });
   }
 
   // Build list of user IDs to query (primary + provider ID if different)
@@ -26,7 +26,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
   });
 
   if (!meal) {
-    return NextResponse.json({ error: "not_found", message: "Meal not found" }, { status: 404 });
+    return NextResponse.json({ error: 'not_found', message: 'Meal not found' }, { status: 404 });
   }
 
   const photoId = meal.photoId ?? undefined;
@@ -52,9 +52,9 @@ export async function DELETE(request: Request, { params }: RouteParams) {
       photoDeleted: Boolean(photoId),
     });
   } catch (error) {
-    console.error("[sync] Failed to delete meal", error);
+    console.error('[sync] Failed to delete meal', error);
     return NextResponse.json(
-      { error: "server_error", message: "Failed to delete meal" },
+      { error: 'server_error', message: 'Failed to delete meal' },
       { status: 500 },
     );
   }
@@ -63,7 +63,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
 export async function PUT(request: Request, { params }: RouteParams) {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "unauthorized", message: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: 'unauthorized', message: 'Unauthorized' }, { status: 401 });
   }
 
   // Build list of user IDs to query (primary + provider ID if different)
@@ -76,14 +76,14 @@ export async function PUT(request: Request, { params }: RouteParams) {
 
   if (!data?.items || !Array.isArray(data.items) || data.items.length === 0) {
     return NextResponse.json(
-      { error: "validation_error", message: "Meal items are required" },
+      { error: 'validation_error', message: 'Meal items are required' },
       { status: 400 },
     );
   }
 
   if (!data.updatedAt) {
     return NextResponse.json(
-      { error: "validation_error", message: "updatedAt is required for conflict detection" },
+      { error: 'validation_error', message: 'updatedAt is required for conflict detection' },
       { status: 400 },
     );
   }
@@ -91,7 +91,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
   const clientUpdatedAt = new Date(data.updatedAt);
   if (Number.isNaN(clientUpdatedAt.getTime())) {
     return NextResponse.json(
-      { error: "validation_error", message: "updatedAt must be a valid timestamp" },
+      { error: 'validation_error', message: 'updatedAt must be a valid timestamp' },
       { status: 400 },
     );
   }
@@ -102,14 +102,14 @@ export async function PUT(request: Request, { params }: RouteParams) {
   });
 
   if (!meal) {
-    return NextResponse.json({ error: "not_found", message: "Meal not found" }, { status: 404 });
+    return NextResponse.json({ error: 'not_found', message: 'Meal not found' }, { status: 404 });
   }
 
   if (meal.updatedAt > clientUpdatedAt) {
     return NextResponse.json(
       {
-        error: "conflict",
-        message: "Server version is newer",
+        error: 'conflict',
+        message: 'Server version is newer',
         serverVersion: meal,
         clientUpdatedAt: clientUpdatedAt.toISOString(),
       },
@@ -169,9 +169,9 @@ export async function PUT(request: Request, { params }: RouteParams) {
 
     return NextResponse.json(updatedMeal);
   } catch (error) {
-    console.error("[sync] Failed to update meal", error);
+    console.error('[sync] Failed to update meal', error);
     return NextResponse.json(
-      { error: "server_error", message: "Failed to update meal" },
+      { error: 'server_error', message: 'Failed to update meal' },
       { status: 500 },
     );
   }

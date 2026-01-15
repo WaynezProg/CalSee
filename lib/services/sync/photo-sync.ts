@@ -1,4 +1,4 @@
-import { generateThumbnail } from "@/lib/services/thumbnail/generator";
+import { generateThumbnail } from '@/lib/services/thumbnail/generator';
 
 export interface UploadedPhotoResponse {
   photoId: string;
@@ -12,26 +12,29 @@ export interface UploadedPhotoResponse {
   uploadedAt: string;
 }
 
-export async function uploadPhotoWithThumbnail(file: File, mealId?: string): Promise<UploadedPhotoResponse> {
+export async function uploadPhotoWithThumbnail(
+  file: File,
+  mealId?: string,
+): Promise<UploadedPhotoResponse> {
   const thumbnail = await generateThumbnail(file);
   const formData = new FormData();
 
-  formData.append("photo", file, file.name);
-  formData.append("thumbnail", thumbnail, "thumbnail.jpg");
+  formData.append('photo', file, file.name);
+  formData.append('thumbnail', thumbnail, 'thumbnail.jpg');
 
   if (mealId) {
-    formData.append("mealId", mealId);
+    formData.append('mealId', mealId);
   }
 
-  const response = await fetch("/api/sync/photos/upload", {
-    method: "POST",
+  const response = await fetch('/api/sync/photos/upload', {
+    method: 'POST',
     body: formData,
   });
 
   if (!response.ok) {
-    const error = new Error("Photo upload failed") as Error & { code?: string };
+    const error = new Error('Photo upload failed') as Error & { code?: string };
     if (response.status === 413) {
-      error.code = "quota_exceeded";
+      error.code = 'quota_exceeded';
     }
     throw error;
   }

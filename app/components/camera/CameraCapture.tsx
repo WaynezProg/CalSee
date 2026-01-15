@@ -36,52 +36,58 @@ export default function CameraCapture({
     };
   }, [preview]);
 
-  const processFile = useCallback(async (file: File) => {
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      onError?.(t('errors.imageInvalid'));
-      return;
-    }
+  const processFile = useCallback(
+    async (file: File) => {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        onError?.(t('errors.imageInvalid'));
+        return;
+      }
 
-    // Validate file size (max 10MB before compression)
-    if (file.size > 10 * 1024 * 1024) {
-      onError?.(t('errors.imageTooLarge'));
-      return;
-    }
+      // Validate file size (max 10MB before compression)
+      if (file.size > 10 * 1024 * 1024) {
+        onError?.(t('errors.imageTooLarge'));
+        return;
+      }
 
-    setIsProcessing(true);
+      setIsProcessing(true);
 
-    try {
-      // Compress the image
-      const result = await compressImage(file);
+      try {
+        // Compress the image
+        const result = await compressImage(file);
 
-      console.log(
-        `Image compressed: ${formatFileSize(result.originalSize)} → ${formatFileSize(result.compressedSize)}`
-      );
+        console.log(
+          `Image compressed: ${formatFileSize(result.originalSize)} → ${formatFileSize(result.compressedSize)}`,
+        );
 
-      // Create preview URL
-      const previewUrl = URL.createObjectURL(result.blob);
-      setPreview(previewUrl);
+        // Create preview URL
+        const previewUrl = URL.createObjectURL(result.blob);
+        setPreview(previewUrl);
 
-      // Notify parent
-      onImageCaptured(result.blob, result.width, result.height);
-    } catch (error) {
-      console.error('Image compression failed:', error);
-      onError?.(t('errors.imageProcessFailed'));
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [onImageCaptured, onError, t]);
+        // Notify parent
+        onImageCaptured(result.blob, result.width, result.height);
+      } catch (error) {
+        console.error('Image compression failed:', error);
+        onError?.(t('errors.imageProcessFailed'));
+      } finally {
+        setIsProcessing(false);
+      }
+    },
+    [onImageCaptured, onError, t],
+  );
 
-  const handleFileSelect = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const handleFileSelect = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
 
-    await processFile(file);
+      await processFile(file);
 
-    // Reset input to allow selecting the same file again
-    event.target.value = '';
-  }, [processFile]);
+      // Reset input to allow selecting the same file again
+      event.target.value = '';
+    },
+    [processFile],
+  );
 
   const handleTakePhoto = useCallback(() => {
     cameraInputRef.current?.click();
@@ -187,7 +193,9 @@ export default function CameraCapture({
                       />
                     </svg>
                   </div>
-                  <span className="text-slate-700 text-sm font-medium">{t('camera.takePhoto')}</span>
+                  <span className="text-slate-700 text-sm font-medium">
+                    {t('camera.takePhoto')}
+                  </span>
                 </button>
 
                 {/* Choose from Gallery Button */}
@@ -213,12 +221,16 @@ export default function CameraCapture({
                       />
                     </svg>
                   </div>
-                  <span className="text-slate-700 text-sm font-medium">{t('camera.chooseFromGallery')}</span>
+                  <span className="text-slate-700 text-sm font-medium">
+                    {t('camera.chooseFromGallery')}
+                  </span>
                 </button>
               </div>
 
               {/* Supported Formats */}
-              <p className="text-center text-xs text-slate-400 mt-4">{t('camera.supportedFormats')}</p>
+              <p className="text-center text-xs text-slate-400 mt-4">
+                {t('camera.supportedFormats')}
+              </p>
             </div>
           )}
         </div>

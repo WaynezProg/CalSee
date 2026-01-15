@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { getPendingSyncQueueCount } from "@/lib/db/indexeddb/sync-queue";
+import { useEffect, useState } from 'react';
+import { getPendingSyncQueueCount } from '@/lib/db/indexeddb/sync-queue';
 
 export function OfflineIndicator() {
   const [queueCount, setQueueCount] = useState(0);
@@ -11,12 +11,12 @@ export function OfflineIndicator() {
     const updateOnlineStatus = () => setIsOnline(navigator.onLine);
     updateOnlineStatus();
 
-    window.addEventListener("online", updateOnlineStatus);
-    window.addEventListener("offline", updateOnlineStatus);
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
 
     return () => {
-      window.removeEventListener("online", updateOnlineStatus);
-      window.removeEventListener("offline", updateOnlineStatus);
+      window.removeEventListener('online', updateOnlineStatus);
+      window.removeEventListener('offline', updateOnlineStatus);
     };
   }, []);
 
@@ -43,9 +43,7 @@ export function OfflineIndicator() {
 
   return (
     <div className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
-      {isOnline
-        ? `Sync queue: ${queueCount} pending`
-        : `Offline · ${queueCount} pending syncs`}
+      {isOnline ? `Sync queue: ${queueCount} pending` : `Offline · ${queueCount} pending syncs`}
     </div>
   );
 }

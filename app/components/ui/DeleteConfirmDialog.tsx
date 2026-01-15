@@ -43,13 +43,9 @@ export default function DeleteConfirmDialog({
 
       {/* Dialog */}
       <div className="relative bg-white rounded-lg shadow-xl max-w-sm w-full mx-4 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-2">
-          {t('deleteConfirm.title')}
-        </h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-2">{t('deleteConfirm.title')}</h2>
 
-        <p className="text-gray-600 mb-6">
-          {t('deleteConfirm.message', { itemName })}
-        </p>
+        <p className="text-gray-600 mb-6">{t('deleteConfirm.message', { itemName })}</p>
 
         <div className="flex gap-3">
           <button

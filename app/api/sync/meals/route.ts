@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
-import { prisma } from "@/lib/db/prisma/client";
-import { calculateNutritionTotals } from "@/lib/utils/nutrition-calculator";
+import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/auth';
+import { prisma } from '@/lib/db/prisma/client';
+import { calculateNutritionTotals } from '@/lib/utils/nutrition-calculator';
 
 export async function GET(request: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "unauthorized", message: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: 'unauthorized', message: 'Unauthorized' }, { status: 401 });
   }
 
   // Build list of user IDs to query (primary + provider ID if different)
@@ -15,8 +15,8 @@ export async function GET(request: NextRequest) {
     userIds.push(session.user.providerId);
   }
 
-  const since = request.nextUrl.searchParams.get("since");
-  const limitParam = request.nextUrl.searchParams.get("limit");
+  const since = request.nextUrl.searchParams.get('since');
+  const limitParam = request.nextUrl.searchParams.get('limit');
   const limit = limitParam ? Number(limitParam) : 100;
 
   try {
@@ -26,15 +26,15 @@ export async function GET(request: NextRequest) {
         ...(since ? { updatedAt: { gt: new Date(since) } } : {}),
       },
       include: { items: true },
-      orderBy: { timestamp: "desc" },
+      orderBy: { timestamp: 'desc' },
       take: Number.isFinite(limit) ? limit : 100,
     });
 
     return NextResponse.json({ meals, hasMore: false });
   } catch (error) {
-    console.error("[sync] Failed to load meals", error);
+    console.error('[sync] Failed to load meals', error);
     return NextResponse.json(
-      { error: "server_error", message: "Failed to load meals" },
+      { error: 'server_error', message: 'Failed to load meals' },
       { status: 500 },
     );
   }
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "unauthorized", message: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: 'unauthorized', message: 'Unauthorized' }, { status: 401 });
   }
 
   const userId = session.user.id;
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
 
   if (!data?.items || !Array.isArray(data.items) || data.items.length === 0) {
     return NextResponse.json(
-      { error: "validation_error", message: "Meal items are required" },
+      { error: 'validation_error', message: 'Meal items are required' },
       { status: 400 },
     );
   }
@@ -107,9 +107,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(meal, { status: 201 });
   } catch (error) {
-    console.error("[sync] Failed to create meal", error);
+    console.error('[sync] Failed to create meal', error);
     return NextResponse.json(
-      { error: "server_error", message: "Failed to create meal" },
+      { error: 'server_error', message: 'Failed to create meal' },
       { status: 500 },
     );
   }

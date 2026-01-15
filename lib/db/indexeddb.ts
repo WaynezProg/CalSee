@@ -160,7 +160,7 @@ export async function getAllMeals(): Promise<Meal[]> {
   const records = await db.getAllFromIndex('meals', 'by-createdAt');
 
   // Reverse to get descending order (newest first)
-  return records.reverse().map(record => ({
+  return records.reverse().map((record) => ({
     ...record,
     createdAt: new Date(record.createdAt),
     updatedAt: new Date(record.updatedAt),
@@ -227,7 +227,9 @@ export async function deletePhoto(photoId: string): Promise<void> {
 /**
  * Get cached nutrition data for a food.
  */
-export async function getCachedNutrition(foodName: string): Promise<CachedNutritionData | undefined> {
+export async function getCachedNutrition(
+  foodName: string,
+): Promise<CachedNutritionData | undefined> {
   const db = await openDatabase();
   const normalizedName = foodName.toLowerCase().trim();
   const record = await db.get('nutritionCache', normalizedName);
@@ -331,7 +333,11 @@ export async function withdrawCloudRecognitionConsent(): Promise<void> {
 /**
  * Get storage usage estimate.
  */
-export async function getStorageEstimate(): Promise<{ used: number; quota: number; percentage: number }> {
+export async function getStorageEstimate(): Promise<{
+  used: number;
+  quota: number;
+  percentage: number;
+}> {
   if ('storage' in navigator && 'estimate' in navigator.storage) {
     const estimate = await navigator.storage.estimate();
     const used = estimate.usage || 0;

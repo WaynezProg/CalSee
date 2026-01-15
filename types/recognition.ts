@@ -13,10 +13,10 @@ export type ContainerSize = 'small' | 'medium' | 'large';
  * Single food item from recognition response.
  */
 export interface RecognitionItem {
-  name: string;              // Food item name in specified locale
-  confidence?: number;       // Recognition confidence (0.0-1.0)
-  notes?: string;            // Additional notes about the item
-  portionUnit?: string;      // Portion unit (e.g., "份", "碗")
+  name: string; // Food item name in specified locale
+  confidence?: number; // Recognition confidence (0.0-1.0)
+  notes?: string; // Additional notes about the item
+  portionUnit?: string; // Portion unit (e.g., "份", "碗")
   category?: RecognitionCategory; // Food category for special handling (e.g., beverage sweetness)
   estimatedCount?: number | string; // Estimated count (free format)
   estimatedWeightGrams?: number | string; // Estimated weight in grams (free format)
@@ -27,8 +27,8 @@ export interface RecognitionItem {
  * Multi-item recognition response from API.
  */
 export interface MultiItemRecognitionResponse {
-  items: RecognitionItem[];  // Array of recognized food items (1-6 items)
-  locale: string;            // Locale identifier (e.g., "zh-TW")
+  items: RecognitionItem[]; // Array of recognized food items (1-6 items)
+  locale: string; // Locale identifier (e.g., "zh-TW")
 }
 
 /**
@@ -53,7 +53,9 @@ export interface RecognitionApiErrorResponse {
 /**
  * Recognition API response union type.
  */
-export type MultiItemRecognitionApiResponse = RecognitionApiSuccessResponse | RecognitionApiErrorResponse;
+export type MultiItemRecognitionApiResponse =
+  | RecognitionApiSuccessResponse
+  | RecognitionApiErrorResponse;
 
 /**
  * Recognition error types for multi-item recognition.
@@ -74,9 +76,9 @@ export enum MultiItemRecognitionError {
  * Recognition API request body.
  */
 export interface RecognitionApiRequest {
-  image: string;         // Base64-encoded image data
-  consent: boolean;      // User consent for cloud processing
-  locale?: string;       // Optional locale parameter (default: "zh-TW")
+  image: string; // Base64-encoded image data
+  consent: boolean; // User consent for cloud processing
+  locale?: string; // Optional locale parameter (default: "zh-TW")
 }
 
 /**

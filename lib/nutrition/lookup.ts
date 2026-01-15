@@ -6,10 +6,10 @@
  * for progressive loading.
  */
 
-import { useQuery, useQueries } from "@tanstack/react-query";
-import type { MealItem } from "@/types/sync";
-import { getNutritionWithAIFallback } from "@/lib/services/nutrition";
-import { resolvePortionScale } from "@/lib/nutrition/portion-conversion";
+import { useQuery, useQueries } from '@tanstack/react-query';
+import type { MealItem } from '@/types/sync';
+import { getNutritionWithAIFallback } from '@/lib/services/nutrition';
+import { resolvePortionScale } from '@/lib/nutrition/portion-conversion';
 
 /**
  * Nutrition data response from the API.
@@ -68,15 +68,15 @@ export async function lookupNutrition(
   foodName: string,
   portionSize: number = 1,
   portionUnit?: string,
-  containerSize?: "small" | "medium" | "large",
-  aiEstimatedWeightGrams?: number
+  containerSize?: 'small' | 'medium' | 'large',
+  aiEstimatedWeightGrams?: number,
 ): Promise<NutritionLookupResult> {
   if (!foodName.trim()) {
     return {
       success: false,
       error: {
-        code: "INVALID_FOOD_NAME",
-        message: "Food name is required",
+        code: 'INVALID_FOOD_NAME',
+        message: 'Food name is required',
       },
     };
   }
@@ -84,8 +84,8 @@ export async function lookupNutrition(
   try {
     const unitLabel = portionUnit?.trim();
     const sizeLabel =
-      containerSize && (unitLabel === "盤" || unitLabel === "碗")
-        ? `${containerSize === "small" ? "小" : containerSize === "large" ? "大" : "中"}${unitLabel}`
+      containerSize && (unitLabel === '盤' || unitLabel === '碗')
+        ? `${containerSize === 'small' ? '小' : containerSize === 'large' ? '大' : '中'}${unitLabel}`
         : unitLabel;
     const estimatedLabel =
       aiEstimatedWeightGrams && aiEstimatedWeightGrams > 0
@@ -94,14 +94,11 @@ export async function lookupNutrition(
     const portionLabel = sizeLabel
       ? `${portionSize} ${sizeLabel}`.trim()
       : portionSize
-      ? `${portionSize}`
-      : undefined;
+        ? `${portionSize}`
+        : undefined;
     const portionLabelWithEstimate =
       portionLabel && estimatedLabel ? `${portionLabel} (${estimatedLabel})` : portionLabel;
-    const result = await getNutritionWithAIFallback(
-      foodName.trim(),
-      portionLabelWithEstimate
-    );
+    const result = await getNutritionWithAIFallback(foodName.trim(), portionLabelWithEstimate);
 
     if (result.success && result.data) {
       const shouldScale = !result.data.isAIEstimate;
@@ -111,7 +108,7 @@ export async function lookupNutrition(
             portionSize,
             portionUnit,
             containerSize,
-            aiEstimatedWeightGrams
+            aiEstimatedWeightGrams,
           ).scale
         : 1;
 
@@ -119,45 +116,27 @@ export async function lookupNutrition(
         success: true,
         data: {
           // Basic macronutrients
-          calories: result.data.calories
-            ? Math.round(result.data.calories * scale)
-            : undefined,
+          calories: result.data.calories ? Math.round(result.data.calories * scale) : undefined,
           protein: result.data.protein
             ? Math.round(result.data.protein * scale * 10) / 10
             : undefined,
           carbohydrates: result.data.carbohydrates
             ? Math.round(result.data.carbohydrates * scale * 10) / 10
             : undefined,
-          fats: result.data.fats
-            ? Math.round(result.data.fats * scale * 10) / 10
-            : undefined,
+          fats: result.data.fats ? Math.round(result.data.fats * scale * 10) / 10 : undefined,
           // Extended macronutrients
-          fiber: result.data.fiber
-            ? Math.round(result.data.fiber * scale * 10) / 10
-            : undefined,
-          sugar: result.data.sugar
-            ? Math.round(result.data.sugar * scale * 10) / 10
-            : undefined,
+          fiber: result.data.fiber ? Math.round(result.data.fiber * scale * 10) / 10 : undefined,
+          sugar: result.data.sugar ? Math.round(result.data.sugar * scale * 10) / 10 : undefined,
           saturatedFat: result.data.saturatedFat
             ? Math.round(result.data.saturatedFat * scale * 10) / 10
             : undefined,
           // Minerals
-          sodium: result.data.sodium
-            ? Math.round(result.data.sodium * scale)
-            : undefined,
-          potassium: result.data.potassium
-            ? Math.round(result.data.potassium * scale)
-            : undefined,
-          calcium: result.data.calcium
-            ? Math.round(result.data.calcium * scale)
-            : undefined,
-          iron: result.data.iron
-            ? Math.round(result.data.iron * scale * 10) / 10
-            : undefined,
+          sodium: result.data.sodium ? Math.round(result.data.sodium * scale) : undefined,
+          potassium: result.data.potassium ? Math.round(result.data.potassium * scale) : undefined,
+          calcium: result.data.calcium ? Math.round(result.data.calcium * scale) : undefined,
+          iron: result.data.iron ? Math.round(result.data.iron * scale * 10) / 10 : undefined,
           // Vitamins
-          vitaminA: result.data.vitaminA
-            ? Math.round(result.data.vitaminA * scale)
-            : undefined,
+          vitaminA: result.data.vitaminA ? Math.round(result.data.vitaminA * scale) : undefined,
           vitaminC: result.data.vitaminC
             ? Math.round(result.data.vitaminC * scale * 10) / 10
             : undefined,
@@ -181,17 +160,17 @@ export async function lookupNutrition(
     return {
       success: false,
       error: result.error || {
-        code: "API_ERROR",
-        message: "Failed to fetch nutrition data",
+        code: 'API_ERROR',
+        message: 'Failed to fetch nutrition data',
       },
     };
   } catch (error) {
-    console.error("Nutrition lookup error:", error);
+    console.error('Nutrition lookup error:', error);
     return {
       success: false,
       error: {
-        code: "NETWORK_ERROR",
-        message: "Failed to fetch nutrition data",
+        code: 'NETWORK_ERROR',
+        message: 'Failed to fetch nutrition data',
       },
     };
   }
@@ -211,13 +190,13 @@ export function useNutritionLookup(
   foodName: string,
   portionSize: number = 1,
   portionUnit?: string,
-  containerSize?: "small" | "medium" | "large",
+  containerSize?: 'small' | 'medium' | 'large',
   aiEstimatedWeightGrams?: number,
-  enabled: boolean = true
+  enabled: boolean = true,
 ) {
   return useQuery({
     queryKey: [
-      "nutrition",
+      'nutrition',
       foodName,
       portionSize,
       portionUnit,
@@ -225,13 +204,7 @@ export function useNutritionLookup(
       aiEstimatedWeightGrams,
     ],
     queryFn: () =>
-      lookupNutrition(
-        foodName,
-        portionSize,
-        portionUnit,
-        containerSize,
-        aiEstimatedWeightGrams
-      ),
+      lookupNutrition(foodName, portionSize, portionUnit, containerSize, aiEstimatedWeightGrams),
     enabled: enabled && foodName.trim().length >= 2,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 30 * 60 * 1000, // 30 minutes (formerly cacheTime)
@@ -246,14 +219,11 @@ export function useNutritionLookup(
  * @param items - Array of meal items to look up
  * @param enabled - Whether to enable the queries
  */
-export function useMultipleNutritionLookup(
-  items: MealItem[],
-  enabled: boolean = true
-) {
+export function useMultipleNutritionLookup(items: MealItem[], enabled: boolean = true) {
   return useQueries({
     queries: items.map((item) => ({
       queryKey: [
-        "nutrition",
+        'nutrition',
         item.foodName,
         item.portionSize,
         item.portionUnit,
@@ -266,7 +236,7 @@ export function useMultipleNutritionLookup(
           item.portionSize,
           item.portionUnit,
           item.containerSize,
-          item.aiEstimatedWeightGrams
+          item.aiEstimatedWeightGrams,
         ),
       enabled: enabled && item.foodName.trim().length >= 2,
       staleTime: 5 * 60 * 1000,
@@ -295,6 +265,6 @@ export function calculateTotalNutrition(items: MealItem[]): {
       totalCarbs: totals.totalCarbs + (item.carbs ?? 0),
       totalFat: totals.totalFat + (item.fat ?? 0),
     }),
-    { totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFat: 0 }
+    { totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFat: 0 },
   );
 }
