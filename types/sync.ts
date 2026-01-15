@@ -69,8 +69,8 @@ export interface Photo {
   uploadedAt: string;
 }
 
-export type SyncQueueStatus = "pending" | "syncing" | "failed" | "completed";
-export type SyncOperationType = "create" | "update" | "delete";
+export type SyncQueueStatus = 'pending' | 'syncing' | 'failed' | 'completed';
+export type SyncOperationType = 'create' | 'update' | 'delete';
 
 export interface SyncQueueItem {
   operationId: string;

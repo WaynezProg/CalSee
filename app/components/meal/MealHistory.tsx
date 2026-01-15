@@ -34,7 +34,7 @@ export default function MealHistory({ onMealSelect }: MealHistoryProps) {
         setIsLoading(true);
         const allMeals = await getAllMeals();
 
-        photoUrlsRef.current.forEach(url => URL.revokeObjectURL(url));
+        photoUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
         photoUrlsRef.current = [];
 
         // Load photos for each meal
@@ -53,7 +53,7 @@ export default function MealHistory({ onMealSelect }: MealHistoryProps) {
             } catch {
               return { ...meal };
             }
-          })
+          }),
         );
 
         setMeals(mealsWithPhotos);
@@ -70,31 +70,34 @@ export default function MealHistory({ onMealSelect }: MealHistoryProps) {
 
     // Cleanup object URLs on unmount
     return () => {
-      photoUrlsRef.current.forEach(url => URL.revokeObjectURL(url));
+      photoUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
       photoUrlsRef.current = [];
     };
   }, []);
 
-  const formatDate = useCallback((date: Date) => {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const mealDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    const diffDays = Math.floor((today.getTime() - mealDate.getTime()) / (1000 * 60 * 60 * 24));
-    const timeLabel = date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+  const formatDate = useCallback(
+    (date: Date) => {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const mealDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const diffDays = Math.floor((today.getTime() - mealDate.getTime()) / (1000 * 60 * 60 * 24));
+      const timeLabel = date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
 
-    if (diffDays === 0) {
-      return t('mealHistory.today', { time: timeLabel });
-    } else if (diffDays === 1) {
-      return t('mealHistory.yesterday', { time: timeLabel });
-    } else {
-      return date.toLocaleDateString(locale, {
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    }
-  }, [locale, t]);
+      if (diffDays === 0) {
+        return t('mealHistory.today', { time: timeLabel });
+      } else if (diffDays === 1) {
+        return t('mealHistory.yesterday', { time: timeLabel });
+      } else {
+        return date.toLocaleDateString(locale, {
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+      }
+    },
+    [locale, t],
+  );
 
   if (isLoading) {
     return <LoadingSkeleton rows={4} />;
@@ -143,11 +146,7 @@ export default function MealHistory({ onMealSelect }: MealHistoryProps) {
           {/* Photo thumbnail */}
           <div className="w-16 h-16 bg-slate-100 rounded-xl overflow-hidden flex-shrink-0">
             {meal.photoUrl ? (
-              <img
-                src={meal.photoUrl}
-                alt={meal.foodName}
-                className="w-full h-full object-cover"
-              />
+              <img src={meal.photoUrl} alt={meal.foodName} className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
                 <svg
@@ -193,12 +192,7 @@ export default function MealHistory({ onMealSelect }: MealHistoryProps) {
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 5l7 7-7 7"
-            />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </button>
       ))}

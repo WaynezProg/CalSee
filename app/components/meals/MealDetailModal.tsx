@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 /**
  * MealDetailModal Component
@@ -8,14 +8,14 @@
  * Reuses MealItemList for editing functionality.
  */
 
-import { useState, useCallback } from "react";
-import { useI18n } from "@/lib/i18n";
-import type { Meal, MealItem, MealType } from "@/types/sync";
-import { MealItemList } from "./MealItemList";
-import { TotalNutritionSummary } from "./TotalNutritionSummary";
+import { useState, useCallback } from 'react';
+import { useI18n } from '@/lib/i18n';
+import type { Meal, MealItem, MealType } from '@/types/sync';
+import { MealItemList } from './MealItemList';
+import { TotalNutritionSummary } from './TotalNutritionSummary';
 
 function pad2(value: number) {
-  return value.toString().padStart(2, "0");
+  return value.toString().padStart(2, '0');
 }
 
 function formatDateInputValue(date: Date) {
@@ -28,18 +28,18 @@ function formatTimeInputValue(date: Date) {
 
 function resolveDefaultMealType(date: Date): MealType {
   const hour = date.getHours();
-  if (hour >= 5 && hour < 11) return "breakfast";
-  if (hour >= 11 && hour < 16) return "lunch";
-  if (hour >= 16 && hour < 22) return "dinner";
-  return "snack";
+  if (hour >= 5 && hour < 11) return 'breakfast';
+  if (hour >= 11 && hour < 16) return 'lunch';
+  if (hour >= 16 && hour < 22) return 'dinner';
+  return 'snack';
 }
 
 function toLocalTimestamp(dateValue: string, timeValue: string) {
   if (!dateValue || !timeValue) {
     return new Date().toISOString();
   }
-  const [year, month, day] = dateValue.split("-").map(Number);
-  const [hour, minute] = timeValue.split(":").map(Number);
+  const [year, month, day] = dateValue.split('-').map(Number);
+  const [hour, minute] = timeValue.split(':').map(Number);
   const localDate = new Date(year, month - 1, day, hour, minute);
   if (Number.isNaN(localDate.getTime())) {
     return new Date().toISOString();
@@ -68,21 +68,19 @@ export function MealDetailModal({
   const [isEditing, setIsEditing] = useState(false);
   const [editedItems, setEditedItems] = useState<MealItem[]>(meal.items);
   const [editedMealDate, setEditedMealDate] = useState(() =>
-    formatDateInputValue(new Date(meal.timestamp))
+    formatDateInputValue(new Date(meal.timestamp)),
   );
   const [editedMealTime, setEditedMealTime] = useState(() =>
-    formatTimeInputValue(new Date(meal.timestamp))
+    formatTimeInputValue(new Date(meal.timestamp)),
   );
   const [editedMealType, setEditedMealType] = useState<MealType>(
-    meal.mealType ?? resolveDefaultMealType(new Date(meal.timestamp))
+    meal.mealType ?? resolveDefaultMealType(new Date(meal.timestamp)),
   );
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const mealTypeLabel = meal.mealType
-    ? t(`mealForm.mealTypeOptions.${meal.mealType}`)
-    : null;
+  const mealTypeLabel = meal.mealType ? t(`mealForm.mealTypeOptions.${meal.mealType}`) : null;
 
   // Reset state when meal changes
   const resetState = useCallback(() => {
@@ -116,18 +114,18 @@ export function MealDetailModal({
     setEditedItems([
       ...editedItems,
       {
-        foodName: "",
+        foodName: '',
         portionSize: 1,
-        portionUnit: "份",
+        portionUnit: '份',
       },
     ]);
   };
 
   const handleSave = async () => {
     // Validate at least one item with food name
-    const validItems = editedItems.filter((item) => item.foodName.trim() !== "");
+    const validItems = editedItems.filter((item) => item.foodName.trim() !== '');
     if (validItems.length === 0) {
-      setError(t("mealForm.noItemsError"));
+      setError(t('mealForm.noItemsError'));
       return;
     }
 
@@ -145,7 +143,7 @@ export function MealDetailModal({
       await onSave(updatedMeal);
       setIsEditing(false);
     } catch (err) {
-      setError(t("mealForm.syncFailed"));
+      setError(t('mealForm.syncFailed'));
     } finally {
       setIsSaving(false);
     }
@@ -154,7 +152,7 @@ export function MealDetailModal({
   const handleDelete = async () => {
     if (!onDelete) return;
 
-    const confirmed = window.confirm(t("deleteConfirm.message", { itemName: "這筆餐點" }));
+    const confirmed = window.confirm(t('deleteConfirm.message', { itemName: '這筆餐點' }));
     if (!confirmed) return;
 
     setIsDeleting(true);
@@ -164,7 +162,7 @@ export function MealDetailModal({
       await onDelete(meal);
       onClose();
     } catch (err) {
-      setError(t("errors.mealDeleteFailed"));
+      setError(t('errors.mealDeleteFailed'));
     } finally {
       setIsDeleting(false);
     }
@@ -185,17 +183,22 @@ export function MealDetailModal({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
           <h2 className="text-lg font-semibold text-gray-900">
-            {isEditing ? t("mealDetail.editTitle") : t("mealDetail.viewTitle")}
+            {isEditing ? t('mealDetail.editTitle') : t('mealDetail.viewTitle')}
           </h2>
           <button
             type="button"
             onClick={handleClose}
             disabled={isSaving || isDeleting}
             className="text-gray-500 hover:text-gray-700 disabled:opacity-50"
-            aria-label={t("mealDetail.closeLabel")}
+            aria-label={t('mealDetail.closeLabel')}
           >
             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
@@ -205,24 +208,20 @@ export function MealDetailModal({
           {/* Photo */}
           {photoUrl && (
             <div className="mb-4 overflow-hidden rounded-xl">
-              <img
-                src={photoUrl}
-                alt="Meal photo"
-                className="w-full object-cover"
-              />
+              <img src={photoUrl} alt="Meal photo" className="w-full object-cover" />
             </div>
           )}
 
           {/* Timestamp */}
           <div className="mb-4 space-y-1 text-sm text-gray-500">
             <p>
-              {t("mealDetail.recordedAt", {
+              {t('mealDetail.recordedAt', {
                 time: new Date(meal.timestamp).toLocaleString(),
               })}
             </p>
             {mealTypeLabel && (
               <p>
-                {t("mealForm.mealTypeLabel")}: {mealTypeLabel}
+                {t('mealForm.mealTypeLabel')}: {mealTypeLabel}
               </p>
             )}
           </div>
@@ -232,7 +231,7 @@ export function MealDetailModal({
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <label className="text-sm text-slate-700">
                   <span className="mb-1 block text-xs font-medium text-slate-500">
-                    {t("mealForm.mealDateLabel")}
+                    {t('mealForm.mealDateLabel')}
                   </span>
                   <input
                     type="date"
@@ -244,7 +243,7 @@ export function MealDetailModal({
                 </label>
                 <label className="text-sm text-slate-700">
                   <span className="mb-1 block text-xs font-medium text-slate-500">
-                    {t("mealForm.mealTimeLabel")}
+                    {t('mealForm.mealTimeLabel')}
                   </span>
                   <input
                     type="time"
@@ -256,7 +255,7 @@ export function MealDetailModal({
                 </label>
                 <label className="text-sm text-slate-700">
                   <span className="mb-1 block text-xs font-medium text-slate-500">
-                    {t("mealForm.mealTypeLabel")}
+                    {t('mealForm.mealTypeLabel')}
                   </span>
                   <select
                     value={editedMealType}
@@ -264,10 +263,10 @@ export function MealDetailModal({
                     disabled={isSaving}
                     className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50"
                   >
-                    <option value="breakfast">{t("mealForm.mealTypeOptions.breakfast")}</option>
-                    <option value="lunch">{t("mealForm.mealTypeOptions.lunch")}</option>
-                    <option value="dinner">{t("mealForm.mealTypeOptions.dinner")}</option>
-                    <option value="snack">{t("mealForm.mealTypeOptions.snack")}</option>
+                    <option value="breakfast">{t('mealForm.mealTypeOptions.breakfast')}</option>
+                    <option value="lunch">{t('mealForm.mealTypeOptions.lunch')}</option>
+                    <option value="dinner">{t('mealForm.mealTypeOptions.dinner')}</option>
+                    <option value="snack">{t('mealForm.mealTypeOptions.snack')}</option>
                   </select>
                 </label>
               </div>
@@ -276,9 +275,7 @@ export function MealDetailModal({
 
           {/* Error message */}
           {error && (
-            <div className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
-              {error}
-            </div>
+            <div className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</div>
           )}
 
           {/* Items */}
@@ -293,7 +290,7 @@ export function MealDetailModal({
           ) : (
             <div className="space-y-3">
               <p className="text-sm font-medium text-gray-700">
-                {t("mealForm.items.detected", { count: displayItems.length })}
+                {t('mealForm.items.detected', { count: displayItems.length })}
               </p>
               {displayItems.map((item, index) => (
                 <ViewMealItemCard key={item.id || index} item={item} />
@@ -317,7 +314,7 @@ export function MealDetailModal({
                 disabled={isSaving}
                 className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
               >
-                {t("mealForm.cancel")}
+                {t('mealForm.cancel')}
               </button>
               <button
                 type="button"
@@ -325,7 +322,7 @@ export function MealDetailModal({
                 disabled={isSaving}
                 className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
               >
-                {isSaving ? t("mealForm.saving") : t("mealForm.save")}
+                {isSaving ? t('mealForm.saving') : t('mealForm.save')}
               </button>
             </>
           ) : (
@@ -337,7 +334,7 @@ export function MealDetailModal({
                   disabled={isDeleting}
                   className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
                 >
-                  {isDeleting ? t("deleteConfirm.deleting") : t("mealDetail.delete")}
+                  {isDeleting ? t('deleteConfirm.deleting') : t('mealDetail.delete')}
                 </button>
               )}
               <button
@@ -345,7 +342,7 @@ export function MealDetailModal({
                 onClick={handleStartEdit}
                 className="flex-1 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
               >
-                {t("mealDetail.edit")}
+                {t('mealDetail.edit')}
               </button>
             </>
           )}
@@ -378,19 +375,23 @@ function ViewMealItemCard({ item }: ViewMealItemCardProps) {
         </div>
         {item.category && (
           <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-700">
-            {item.category === "beverage" ? "飲料" :
-             item.category === "soup" ? "湯品" :
-             item.category === "dessert" ? "甜點" : "食物"}
+            {item.category === 'beverage'
+              ? '飲料'
+              : item.category === 'soup'
+                ? '湯品'
+                : item.category === 'dessert'
+                  ? '甜點'
+                  : '食物'}
           </span>
         )}
       </div>
 
       {/* Basic nutrition */}
       <div className="mt-3 grid grid-cols-4 gap-2 rounded-lg bg-gray-50 p-2">
-        <NutritionValue label={t("mealForm.caloriesLabel")} value={item.calories} unit="kcal" />
-        <NutritionValue label={t("mealForm.proteinLabel")} value={item.protein} unit="g" />
-        <NutritionValue label={t("mealForm.carbsLabel")} value={item.carbs} unit="g" />
-        <NutritionValue label={t("mealForm.fatsLabel")} value={item.fat} unit="g" />
+        <NutritionValue label={t('mealForm.caloriesLabel')} value={item.calories} unit="kcal" />
+        <NutritionValue label={t('mealForm.proteinLabel')} value={item.protein} unit="g" />
+        <NutritionValue label={t('mealForm.carbsLabel')} value={item.carbs} unit="g" />
+        <NutritionValue label={t('mealForm.fatsLabel')} value={item.fat} unit="g" />
       </div>
 
       {/* Toggle for detailed nutrition */}
@@ -399,7 +400,7 @@ function ViewMealItemCard({ item }: ViewMealItemCardProps) {
         onClick={() => setShowDetailed(!showDetailed)}
         className="mt-2 w-full text-center text-xs text-blue-600 hover:text-blue-800"
       >
-        {showDetailed ? "▲ 收合詳細營養" : "▼ 展開詳細營養"}
+        {showDetailed ? '▲ 收合詳細營養' : '▼ 展開詳細營養'}
       </button>
 
       {/* Detailed nutrition */}
@@ -408,48 +409,60 @@ function ViewMealItemCard({ item }: ViewMealItemCardProps) {
           {/* Extended macronutrients */}
           <div>
             <p className="mb-2 text-xs font-medium text-gray-600">
-              {t("mealForm.macronutrientsTitle")}
+              {t('mealForm.macronutrientsTitle')}
             </p>
             <div className="grid grid-cols-3 gap-2">
-              <NutritionValue label={t("mealForm.fiberLabel")} value={item.fiber} unit="g" />
-              <NutritionValue label={t("mealForm.sugarLabel")} value={item.sugar} unit="g" />
-              <NutritionValue label={t("mealForm.saturatedFatLabel")} value={item.saturatedFat} unit="g" />
+              <NutritionValue label={t('mealForm.fiberLabel')} value={item.fiber} unit="g" />
+              <NutritionValue label={t('mealForm.sugarLabel')} value={item.sugar} unit="g" />
+              <NutritionValue
+                label={t('mealForm.saturatedFatLabel')}
+                value={item.saturatedFat}
+                unit="g"
+              />
             </div>
           </div>
 
           {/* Minerals */}
           <div>
-            <p className="mb-2 text-xs font-medium text-gray-600">
-              {t("mealForm.mineralsTitle")}
-            </p>
+            <p className="mb-2 text-xs font-medium text-gray-600">{t('mealForm.mineralsTitle')}</p>
             <div className="grid grid-cols-4 gap-2">
-              <NutritionValue label={t("mealForm.sodiumLabel")} value={item.sodium} unit="mg" />
-              <NutritionValue label={t("mealForm.potassiumLabel")} value={item.potassium} unit="mg" />
-              <NutritionValue label={t("mealForm.calciumLabel")} value={item.calcium} unit="mg" />
-              <NutritionValue label={t("mealForm.ironLabel")} value={item.iron} unit="mg" />
+              <NutritionValue label={t('mealForm.sodiumLabel')} value={item.sodium} unit="mg" />
+              <NutritionValue
+                label={t('mealForm.potassiumLabel')}
+                value={item.potassium}
+                unit="mg"
+              />
+              <NutritionValue label={t('mealForm.calciumLabel')} value={item.calcium} unit="mg" />
+              <NutritionValue label={t('mealForm.ironLabel')} value={item.iron} unit="mg" />
             </div>
           </div>
 
           {/* Vitamins */}
           <div>
-            <p className="mb-2 text-xs font-medium text-gray-600">
-              {t("mealForm.vitaminsTitle")}
-            </p>
+            <p className="mb-2 text-xs font-medium text-gray-600">{t('mealForm.vitaminsTitle')}</p>
             <div className="grid grid-cols-4 gap-2">
-              <NutritionValue label={t("mealForm.vitaminALabel")} value={item.vitaminA} unit="μg" />
-              <NutritionValue label={t("mealForm.vitaminCLabel")} value={item.vitaminC} unit="mg" />
-              <NutritionValue label={t("mealForm.vitaminDLabel")} value={item.vitaminD} unit="μg" />
-              <NutritionValue label={t("mealForm.vitaminB12Label")} value={item.vitaminB12} unit="μg" />
+              <NutritionValue label={t('mealForm.vitaminALabel')} value={item.vitaminA} unit="μg" />
+              <NutritionValue label={t('mealForm.vitaminCLabel')} value={item.vitaminC} unit="mg" />
+              <NutritionValue label={t('mealForm.vitaminDLabel')} value={item.vitaminD} unit="μg" />
+              <NutritionValue
+                label={t('mealForm.vitaminB12Label')}
+                value={item.vitaminB12}
+                unit="μg"
+              />
             </div>
           </div>
 
           {/* Other */}
           <div>
             <p className="mb-2 text-xs font-medium text-gray-600">
-              {t("mealForm.otherNutrientsTitle")}
+              {t('mealForm.otherNutrientsTitle')}
             </p>
             <div className="grid grid-cols-4 gap-2">
-              <NutritionValue label={t("mealForm.cholesterolLabel")} value={item.cholesterol} unit="mg" />
+              <NutritionValue
+                label={t('mealForm.cholesterolLabel')}
+                value={item.cholesterol}
+                unit="mg"
+              />
             </div>
           </div>
         </div>
@@ -458,8 +471,8 @@ function ViewMealItemCard({ item }: ViewMealItemCardProps) {
       {/* Nutrition source */}
       {item.nutritionSource && (
         <p className="mt-2 text-xs text-gray-500">
-          {item.nutritionSource.includes("AI") ? (
-            <span className="text-purple-600">{t("mealForm.aiEstimated")}</span>
+          {item.nutritionSource.includes('AI') ? (
+            <span className="text-purple-600">{t('mealForm.aiEstimated')}</span>
           ) : (
             item.nutritionSource
           )}
@@ -483,7 +496,7 @@ function NutritionValue({ label, value, unit }: NutritionValueProps) {
     <div className="text-center">
       <p className="text-xs text-gray-500">{label}</p>
       <p className="text-sm font-medium text-gray-900">
-        {value != null ? `${value}${unit}` : "--"}
+        {value != null ? `${value}${unit}` : '--'}
       </p>
     </div>
   );

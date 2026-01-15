@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 /**
  * TotalNutritionSummary Component
@@ -9,9 +9,9 @@
  * Supports expandable detailed nutrition view.
  */
 
-import { useState } from "react";
-import { useI18n } from "@/lib/i18n";
-import type { MealItem } from "@/types/sync";
+import { useState } from 'react';
+import { useI18n } from '@/lib/i18n';
+import type { MealItem } from '@/types/sync';
 
 interface TotalNutritionSummaryProps {
   items: MealItem[];
@@ -47,39 +47,43 @@ export function TotalNutritionSummary({ items }: TotalNutritionSummaryProps) {
       cholesterol: acc.cholesterol + (item.cholesterol ?? 0),
     }),
     {
-      calories: 0, protein: 0, carbs: 0, fat: 0,
-      fiber: 0, sugar: 0, saturatedFat: 0,
-      sodium: 0, potassium: 0, calcium: 0, iron: 0,
-      vitaminA: 0, vitaminC: 0, vitaminD: 0, vitaminB12: 0,
+      calories: 0,
+      protein: 0,
+      carbs: 0,
+      fat: 0,
+      fiber: 0,
+      sugar: 0,
+      saturatedFat: 0,
+      sodium: 0,
+      potassium: 0,
+      calcium: 0,
+      iron: 0,
+      vitaminA: 0,
+      vitaminC: 0,
+      vitaminD: 0,
+      vitaminB12: 0,
       cholesterol: 0,
-    }
+    },
   );
 
   // Check if any nutrition data is missing
   const hasMissingData = items.some(
     (item) =>
-      item.calories == null ||
-      item.protein == null ||
-      item.carbs == null ||
-      item.fat == null
+      item.calories == null || item.protein == null || item.carbs == null || item.fat == null,
   );
 
   // Check if any item uses AI estimation
-  const hasAIEstimate = items.some(
-    (item) => item.nutritionSource?.includes("AI") ?? false
-  );
+  const hasAIEstimate = items.some((item) => item.nutritionSource?.includes('AI') ?? false);
 
   return (
     <div className="rounded-lg bg-blue-50 p-4">
       <h3 className="mb-3 text-sm font-semibold text-gray-700">
-        {t("mealForm.totalNutrition.title")}
+        {t('mealForm.totalNutrition.title')}
       </h3>
 
       {/* Total calories - prominent display */}
       <div className="mb-3 rounded-lg bg-white p-3 text-center">
-        <p className="text-xs text-gray-500">
-          {t("mealForm.totalNutrition.calories")}
-        </p>
+        <p className="text-xs text-gray-500">{t('mealForm.totalNutrition.calories')}</p>
         <p className="text-3xl font-bold text-blue-600">
           {Math.round(totals.calories)}
           <span className="ml-1 text-base font-normal text-gray-500">kcal</span>
@@ -89,19 +93,19 @@ export function TotalNutritionSummary({ items }: TotalNutritionSummaryProps) {
       {/* Macros summary row */}
       <div className="grid grid-cols-3 gap-2">
         <MacroField
-          label={t("mealForm.totalNutrition.protein")}
+          label={t('mealForm.totalNutrition.protein')}
           value={totals.protein}
           unit="g"
           color="text-green-600"
         />
         <MacroField
-          label={t("mealForm.totalNutrition.carbs")}
+          label={t('mealForm.totalNutrition.carbs')}
           value={totals.carbs}
           unit="g"
           color="text-orange-600"
         />
         <MacroField
-          label={t("mealForm.totalNutrition.fat")}
+          label={t('mealForm.totalNutrition.fat')}
           value={totals.fat}
           unit="g"
           color="text-red-500"
@@ -114,7 +118,7 @@ export function TotalNutritionSummary({ items }: TotalNutritionSummaryProps) {
         onClick={() => setShowDetailed(!showDetailed)}
         className="mt-3 w-full text-center text-xs text-blue-600 hover:text-blue-800"
       >
-        {showDetailed ? "▲ 收合詳細營養" : "▼ 展開詳細營養"}
+        {showDetailed ? '▲ 收合詳細營養' : '▼ 展開詳細營養'}
       </button>
 
       {/* Detailed nutrition - expandable */}
@@ -123,21 +127,13 @@ export function TotalNutritionSummary({ items }: TotalNutritionSummaryProps) {
           {/* Extended macronutrients */}
           <div>
             <p className="mb-2 text-xs font-medium text-gray-600">
-              {t("mealForm.macronutrientsTitle")}
+              {t('mealForm.macronutrientsTitle')}
             </p>
             <div className="grid grid-cols-3 gap-2">
+              <DetailField label={t('mealForm.fiberLabel')} value={totals.fiber} unit="g" />
+              <DetailField label={t('mealForm.sugarLabel')} value={totals.sugar} unit="g" />
               <DetailField
-                label={t("mealForm.fiberLabel")}
-                value={totals.fiber}
-                unit="g"
-              />
-              <DetailField
-                label={t("mealForm.sugarLabel")}
-                value={totals.sugar}
-                unit="g"
-              />
-              <DetailField
-                label={t("mealForm.saturatedFatLabel")}
+                label={t('mealForm.saturatedFatLabel')}
                 value={totals.saturatedFat}
                 unit="g"
               />
@@ -146,59 +142,38 @@ export function TotalNutritionSummary({ items }: TotalNutritionSummaryProps) {
 
           {/* Minerals */}
           <div>
-            <p className="mb-2 text-xs font-medium text-gray-600">
-              {t("mealForm.mineralsTitle")}
-            </p>
+            <p className="mb-2 text-xs font-medium text-gray-600">{t('mealForm.mineralsTitle')}</p>
             <div className="grid grid-cols-4 gap-2">
+              <DetailField label={t('mealForm.sodiumLabel')} value={totals.sodium} unit="mg" />
               <DetailField
-                label={t("mealForm.sodiumLabel")}
-                value={totals.sodium}
-                unit="mg"
-              />
-              <DetailField
-                label={t("mealForm.potassiumLabel")}
+                label={t('mealForm.potassiumLabel')}
                 value={totals.potassium}
                 unit="mg"
               />
-              <DetailField
-                label={t("mealForm.calciumLabel")}
-                value={totals.calcium}
-                unit="mg"
-              />
-              <DetailField
-                label={t("mealForm.ironLabel")}
-                value={totals.iron}
-                unit="mg"
-                decimal
-              />
+              <DetailField label={t('mealForm.calciumLabel')} value={totals.calcium} unit="mg" />
+              <DetailField label={t('mealForm.ironLabel')} value={totals.iron} unit="mg" decimal />
             </div>
           </div>
 
           {/* Vitamins */}
           <div>
-            <p className="mb-2 text-xs font-medium text-gray-600">
-              {t("mealForm.vitaminsTitle")}
-            </p>
+            <p className="mb-2 text-xs font-medium text-gray-600">{t('mealForm.vitaminsTitle')}</p>
             <div className="grid grid-cols-4 gap-2">
+              <DetailField label={t('mealForm.vitaminALabel')} value={totals.vitaminA} unit="μg" />
               <DetailField
-                label={t("mealForm.vitaminALabel")}
-                value={totals.vitaminA}
-                unit="μg"
-              />
-              <DetailField
-                label={t("mealForm.vitaminCLabel")}
+                label={t('mealForm.vitaminCLabel')}
                 value={totals.vitaminC}
                 unit="mg"
                 decimal
               />
               <DetailField
-                label={t("mealForm.vitaminDLabel")}
+                label={t('mealForm.vitaminDLabel')}
                 value={totals.vitaminD}
                 unit="μg"
                 decimal
               />
               <DetailField
-                label={t("mealForm.vitaminB12Label")}
+                label={t('mealForm.vitaminB12Label')}
                 value={totals.vitaminB12}
                 unit="μg"
                 decimal
@@ -209,11 +184,11 @@ export function TotalNutritionSummary({ items }: TotalNutritionSummaryProps) {
           {/* Other */}
           <div>
             <p className="mb-2 text-xs font-medium text-gray-600">
-              {t("mealForm.otherNutrientsTitle")}
+              {t('mealForm.otherNutrientsTitle')}
             </p>
             <div className="grid grid-cols-4 gap-2">
               <DetailField
-                label={t("mealForm.cholesterolLabel")}
+                label={t('mealForm.cholesterolLabel')}
                 value={totals.cholesterol}
                 unit="mg"
               />
@@ -224,14 +199,10 @@ export function TotalNutritionSummary({ items }: TotalNutritionSummaryProps) {
 
       {/* Warning messages */}
       {hasAIEstimate && (
-        <p className="mt-3 text-xs text-purple-600">
-          {t("mealForm.aiEstimateNote")}
-        </p>
+        <p className="mt-3 text-xs text-purple-600">{t('mealForm.aiEstimateNote')}</p>
       )}
       {hasMissingData && !hasAIEstimate && (
-        <p className="mt-3 text-xs text-orange-600">
-          {t("mealForm.partialNutritionWarning")}
-        </p>
+        <p className="mt-3 text-xs text-orange-600">{t('mealForm.partialNutritionWarning')}</p>
       )}
     </div>
   );
@@ -270,7 +241,7 @@ interface DetailFieldProps {
 }
 
 function DetailField({ label, value, unit, decimal = false }: DetailFieldProps) {
-  const displayValue = decimal ? (Math.round(value * 10) / 10) : Math.round(value);
+  const displayValue = decimal ? Math.round(value * 10) / 10 : Math.round(value);
   return (
     <div className="rounded bg-white p-1.5 text-center">
       <p className="text-xs text-gray-500">{label}</p>

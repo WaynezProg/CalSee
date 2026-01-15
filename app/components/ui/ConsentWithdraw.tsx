@@ -63,9 +63,7 @@ export default function ConsentWithdraw({ onWithdraw }: ConsentWithdrawProps) {
       >
         {t('consentWithdraw.label')}
       </button>
-      {statusMessage && (
-        <span className="text-xs text-gray-400">{statusMessage}</span>
-      )}
+      {statusMessage && <span className="text-xs text-gray-400">{statusMessage}</span>}
     </div>
   );
 }

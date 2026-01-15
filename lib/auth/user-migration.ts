@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db/prisma/client";
+import { prisma } from '@/lib/db/prisma/client';
 
 export async function migrateUserData(fromUserId?: string, toUserId?: string): Promise<void> {
   if (!fromUserId || !toUserId || fromUserId === toUserId) {
@@ -17,6 +17,6 @@ export async function migrateUserData(fromUserId?: string, toUserId?: string): P
       }),
     ]);
   } catch (error) {
-    console.warn("[auth] user data migration failed", error);
+    console.warn('[auth] user data migration failed', error);
   }
 }

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 /**
  * React Query Provider
@@ -7,8 +7,8 @@
  * Provides QueryClient for nutrition lookup and other data fetching.
  */
 
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState, type ReactNode } from "react";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useState, type ReactNode } from 'react';
 
 interface QueryProviderProps {
   children: ReactNode;
@@ -26,12 +26,10 @@ export function QueryProvider({ children }: QueryProviderProps) {
             refetchOnWindowFocus: false,
           },
         },
-      })
+      }),
   );
 
-  return (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
+  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
 }
 
 export default QueryProvider;

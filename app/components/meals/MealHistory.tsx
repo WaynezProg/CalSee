@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useState } from "react";
-import { useI18n } from "@/lib/i18n";
-import type { Meal } from "@/types/sync";
-import { cacheThumbnail, deleteThumbnail, getThumbnail } from "@/lib/db/indexeddb/thumbnail-cache";
-import { syncMealWithQueue } from "@/lib/services/sync/meal-sync";
-import { MealDetailModal } from "./MealDetailModal";
+import { useEffect, useRef, useState } from 'react';
+import { useI18n } from '@/lib/i18n';
+import type { Meal } from '@/types/sync';
+import { cacheThumbnail, deleteThumbnail, getThumbnail } from '@/lib/db/indexeddb/thumbnail-cache';
+import { syncMealWithQueue } from '@/lib/services/sync/meal-sync';
+import { MealDetailModal } from './MealDetailModal';
 
 interface MealWithThumbnail extends Meal {
   thumbnailUrl?: string;
@@ -13,18 +13,18 @@ interface MealWithThumbnail extends Meal {
   fullPhotoExpiresAt?: string;
 }
 
-async function fetchSignedUrl(photoId: string, type: "main" | "thumbnail") {
+async function fetchSignedUrl(photoId: string, type: 'main' | 'thumbnail') {
   const response = await fetch(`/api/sync/photos/signed-url?photoId=${photoId}&type=${type}`);
   if (!response.ok) {
-    throw new Error("Signed URL request failed");
+    throw new Error('Signed URL request failed');
   }
   return response.json() as Promise<{ url: string; expiresAt: string }>;
 }
 
-async function fetchPhotoBlob(photoId: string, type: "main" | "thumbnail") {
+async function fetchPhotoBlob(photoId: string, type: 'main' | 'thumbnail') {
   const response = await fetch(`/api/sync/photos/proxy?photoId=${photoId}&type=${type}`);
   if (!response.ok) {
-    throw new Error("Photo proxy request failed");
+    throw new Error('Photo proxy request failed');
   }
   return response.blob();
 }
@@ -43,14 +43,14 @@ export function MealHistory() {
     setError(null);
     setIsLoading(true);
     try {
-      const response = await fetch("/api/sync/meals");
+      const response = await fetch('/api/sync/meals');
       if (!response.ok) {
-        throw new Error("Failed to load meals");
+        throw new Error('Failed to load meals');
       }
       const data = await response.json();
       const newMeals = data.meals ?? [];
       setMeals(newMeals);
-      
+
       // Clear both refs when meals are refreshed to allow retry of previously failed photos
       // This gives users a chance to retry after network conditions improve or issues are resolved
       // The refs will be repopulated during the next effect run, preventing infinite retry loops
@@ -58,7 +58,7 @@ export function MealHistory() {
       loadingPhotoIdsRef.current.clear();
       failedPhotoIdsRef.current.clear();
     } catch (err) {
-      setError("Unable to load meal history");
+      setError('Unable to load meal history');
     } finally {
       setIsLoading(false);
     }
@@ -81,22 +81,23 @@ export function MealHistory() {
       // Filter to meals with photos that haven't been loaded yet
       // Skip photos that are currently loading or have failed in this session
       const mealsToLoad = meals.filter(
-        meal => meal.photoId && 
-                !meal.thumbnailUrl && 
-                !loadingPhotoIdsRef.current.has(meal.photoId) &&
-                !failedPhotoIdsRef.current.has(meal.photoId)
+        (meal) =>
+          meal.photoId &&
+          !meal.thumbnailUrl &&
+          !loadingPhotoIdsRef.current.has(meal.photoId) &&
+          !failedPhotoIdsRef.current.has(meal.photoId),
       );
 
       if (mealsToLoad.length === 0) return;
 
       // Mark these as being loaded to prevent duplicate fetches
-      mealsToLoad.forEach(meal => {
+      mealsToLoad.forEach((meal) => {
         if (meal.photoId) loadingPhotoIdsRef.current.add(meal.photoId);
       });
 
       // Load all thumbnails in parallel
       const results = await Promise.allSettled(
-        mealsToLoad.map(async meal => {
+        mealsToLoad.map(async (meal) => {
           const photoId = meal.photoId!;
 
           const loadFromCache = async (): Promise<string | null> => {
@@ -109,18 +110,18 @@ export function MealHistory() {
 
           const loadFromServer = async (): Promise<string | null> => {
             try {
-              const blob = await fetchPhotoBlob(photoId, "thumbnail");
+              const blob = await fetchPhotoBlob(photoId, 'thumbnail');
               await cacheThumbnail(photoId, blob);
               return URL.createObjectURL(blob);
             } catch {
               // Fallback to main photo
               try {
-                const blob = await fetchPhotoBlob(photoId, "main");
+                const blob = await fetchPhotoBlob(photoId, 'main');
                 return URL.createObjectURL(blob);
               } catch {
                 // Last resort: use signed URL directly in <img>
                 try {
-                  const signed = await fetchSignedUrl(photoId, "thumbnail");
+                  const signed = await fetchSignedUrl(photoId, 'thumbnail');
                   return signed.url;
                 } catch {
                   return null;
@@ -131,7 +132,7 @@ export function MealHistory() {
 
           const url = (await loadFromCache()) || (await loadFromServer());
           return { mealId: meal.id, photoId, url };
-        })
+        }),
       );
 
       if (!isActive) return;
@@ -141,14 +142,14 @@ export function MealHistory() {
       results.forEach((result, index) => {
         const meal = mealsToLoad[index];
         const photoId = meal.photoId!;
-        
-        if (result.status === "fulfilled") {
+
+        if (result.status === 'fulfilled') {
           if (result.value.url) {
             // Successfully loaded a valid URL - remove from both sets
             // regardless of whether mealId exists, to prevent permanent blocking
             loadingPhotoIdsRef.current.delete(photoId);
             failedPhotoIdsRef.current.delete(photoId);
-            
+
             // Only update urlMap if we have a mealId to map it to
             if (result.value.mealId) {
               urlMap.set(result.value.mealId, result.value.url);
@@ -160,7 +161,7 @@ export function MealHistory() {
             loadingPhotoIdsRef.current.delete(photoId);
             failedPhotoIdsRef.current.add(photoId);
           }
-        } else if (result.status === "rejected") {
+        } else if (result.status === 'rejected') {
           // Promise rejected - remove from loading set to allow retry for transient network errors
           // Rejected promises are typically temporary failures that should be retried
           // Don't add to failed set, as these are transient errors
@@ -169,12 +170,10 @@ export function MealHistory() {
       });
 
       if (urlMap.size > 0) {
-        setMeals(prev =>
-          prev.map(meal =>
-            meal.id && urlMap.has(meal.id)
-              ? { ...meal, thumbnailUrl: urlMap.get(meal.id) }
-              : meal
-          )
+        setMeals((prev) =>
+          prev.map((meal) =>
+            meal.id && urlMap.has(meal.id) ? { ...meal, thumbnailUrl: urlMap.get(meal.id) } : meal,
+          ),
         );
       }
     };
@@ -188,7 +187,7 @@ export function MealHistory() {
 
   useEffect(() => {
     const refreshExpired = async () => {
-      const expired = meals.filter(meal => {
+      const expired = meals.filter((meal) => {
         if (!meal.fullPhotoUrl || !meal.fullPhotoExpiresAt) return false;
         return new Date(meal.fullPhotoExpiresAt).getTime() <= Date.now();
       });
@@ -212,16 +211,16 @@ export function MealHistory() {
     }
 
     try {
-      const signed = await fetchSignedUrl(meal.photoId, "main");
-      setMeals(prev =>
-        prev.map(item =>
+      const signed = await fetchSignedUrl(meal.photoId, 'main');
+      setMeals((prev) =>
+        prev.map((item) =>
           item.id === meal.id
             ? { ...item, fullPhotoUrl: signed.url, fullPhotoExpiresAt: signed.expiresAt }
             : item,
         ),
       );
     } catch (err) {
-      setError("Unable to load full photo");
+      setError('Unable to load full photo');
     }
   };
 
@@ -232,30 +231,30 @@ export function MealHistory() {
     const isExpired = !expiresAt || expiresAt.getTime() <= Date.now();
 
     if (!meal.fullPhotoUrl || isExpired) {
-      setPhotoLoadingIds(prev => ({ ...prev, [mealId]: true }));
+      setPhotoLoadingIds((prev) => ({ ...prev, [mealId]: true }));
       await handleLoadFullPhoto(meal);
-      setPhotoLoadingIds(prev => ({ ...prev, [mealId]: false }));
+      setPhotoLoadingIds((prev) => ({ ...prev, [mealId]: false }));
     }
 
-    setExpandedMeals(prev => ({ ...prev, [mealId]: !prev[mealId] }));
+    setExpandedMeals((prev) => ({ ...prev, [mealId]: !prev[mealId] }));
   };
 
   const handleDeleteMeal = async (meal: MealWithThumbnail) => {
     if (!meal.id) return;
-    const confirmed = window.confirm("Delete this meal?");
+    const confirmed = window.confirm('Delete this meal?');
     if (!confirmed) return;
 
     try {
-      await syncMealWithQueue(meal, "delete");
+      await syncMealWithQueue(meal, 'delete');
       if (meal.photoId) {
         await deleteThumbnail(meal.photoId);
         // Remove from both refs when meal is deleted
         loadingPhotoIdsRef.current.delete(meal.photoId);
         failedPhotoIdsRef.current.delete(meal.photoId);
       }
-      setMeals(prev => prev.filter(item => item.id !== meal.id));
+      setMeals((prev) => prev.filter((item) => item.id !== meal.id));
     } catch (err) {
-      setError("Unable to delete meal. It will retry in the background.");
+      setError('Unable to delete meal. It will retry in the background.');
     }
   };
 
@@ -275,13 +274,11 @@ export function MealHistory() {
 
   const handleSaveMeal = async (updatedMeal: Meal) => {
     try {
-      await syncMealWithQueue(updatedMeal, "update");
+      await syncMealWithQueue(updatedMeal, 'update');
       // Update local state
-      setMeals(prev =>
-        prev.map(m => (m.id === updatedMeal.id ? { ...m, ...updatedMeal } : m))
-      );
+      setMeals((prev) => prev.map((m) => (m.id === updatedMeal.id ? { ...m, ...updatedMeal } : m)));
       // Update selected meal for modal
-      setSelectedMeal(prev => prev ? { ...prev, ...updatedMeal } : null);
+      setSelectedMeal((prev) => (prev ? { ...prev, ...updatedMeal } : null));
     } catch (err) {
       throw err; // Let modal handle the error
     }
@@ -297,7 +294,7 @@ export function MealHistory() {
         <div>
           <h2 className="text-lg font-semibold text-slate-900">Sync meal history</h2>
           <p className="text-sm text-slate-500">
-            {meals.length} meal{meals.length === 1 ? "" : "s"} synced to the cloud.
+            {meals.length} meal{meals.length === 1 ? '' : 's'} synced to the cloud.
           </p>
         </div>
         <button
@@ -306,7 +303,7 @@ export function MealHistory() {
           onClick={loadMeals}
           disabled={isLoading}
         >
-          {isLoading ? "Refreshing..." : "Refresh"}
+          {isLoading ? 'Refreshing...' : 'Refresh'}
         </button>
       </div>
 
@@ -330,7 +327,7 @@ export function MealHistory() {
       ) : null}
 
       <ul className="space-y-3">
-        {meals.map(meal => {
+        {meals.map((meal) => {
           if (!meal.id) {
             return null;
           }
@@ -368,7 +365,7 @@ export function MealHistory() {
                       </span>
                     )}
                     <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-600">
-                      {meal.items.length} item{meal.items.length === 1 ? "" : "s"}
+                      {meal.items.length} item{meal.items.length === 1 ? '' : 's'}
                     </span>
                   </div>
                   <div className="space-y-1">
@@ -396,7 +393,7 @@ export function MealHistory() {
                     onClick={() => handleTogglePhoto(meal)}
                     disabled={isPhotoLoading}
                   >
-                    {isPhotoLoading ? "Loading photo..." : isExpanded ? "Hide photo" : "View photo"}
+                    {isPhotoLoading ? 'Loading photo...' : isExpanded ? 'Hide photo' : 'View photo'}
                   </button>
                 )}
                 <button

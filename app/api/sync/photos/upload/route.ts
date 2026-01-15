@@ -1,31 +1,31 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
-import { prisma } from "@/lib/db/prisma/client";
-import { uploadPhoto } from "@/lib/db/s3/client";
+import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/auth';
+import { prisma } from '@/lib/db/prisma/client';
+import { uploadPhoto } from '@/lib/db/s3/client';
 
 const MAX_THUMBNAIL_BYTES = 50 * 1024;
 
 export async function POST(request: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "unauthorized", message: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: 'unauthorized', message: 'Unauthorized' }, { status: 401 });
   }
 
   const formData = await request.formData();
-  const photo = formData.get("photo");
-  const thumbnail = formData.get("thumbnail");
-  const mealId = formData.get("mealId");
+  const photo = formData.get('photo');
+  const thumbnail = formData.get('thumbnail');
+  const mealId = formData.get('mealId');
 
   if (!(photo instanceof File) || !(thumbnail instanceof File)) {
     return NextResponse.json(
-      { error: "validation_error", message: "Photo and thumbnail are required" },
+      { error: 'validation_error', message: 'Photo and thumbnail are required' },
       { status: 400 },
     );
   }
 
   if (thumbnail.size > MAX_THUMBNAIL_BYTES) {
     return NextResponse.json(
-      { error: "thumbnail_validation_failed", message: "Thumbnail exceeds size limit" },
+      { error: 'thumbnail_validation_failed', message: 'Thumbnail exceeds size limit' },
       { status: 400 },
     );
   }
@@ -38,20 +38,20 @@ export async function POST(request: NextRequest) {
 
   try {
     const [mainKey, thumbnailKey] = await Promise.all([
-      uploadPhoto(photoId, "main", new Uint8Array(photoBytes), photo.type || "image/jpeg"),
-      uploadPhoto(photoId, "thumbnail", new Uint8Array(thumbnailBytes), "image/jpeg"),
+      uploadPhoto(photoId, 'main', new Uint8Array(photoBytes), photo.type || 'image/jpeg'),
+      uploadPhoto(photoId, 'thumbnail', new Uint8Array(thumbnailBytes), 'image/jpeg'),
     ]);
 
     const record = await prisma.photo.create({
       data: {
         id: photoId,
         userId: session.user.id,
-        mealId: typeof mealId === "string" ? mealId : null,
+        mealId: typeof mealId === 'string' ? mealId : null,
         mainPhotoKey: mainKey,
         thumbnailKey,
         mainPhotoSize: photo.size,
         thumbnailSize: thumbnail.size,
-        mimeType: photo.type || "image/jpeg",
+        mimeType: photo.type || 'image/jpeg',
       },
     });
 
@@ -70,9 +70,9 @@ export async function POST(request: NextRequest) {
       { status: 201 },
     );
   } catch (error) {
-    console.error("[sync] Photo upload failed", error);
+    console.error('[sync] Photo upload failed', error);
     return NextResponse.json(
-      { error: "server_error", message: "Photo upload failed" },
+      { error: 'server_error', message: 'Photo upload failed' },
       { status: 500 },
     );
   }

@@ -18,11 +18,7 @@ interface ConsentDialogProps {
 
 const CONSENT_VERSION = '1.0';
 
-export default function ConsentDialog({
-  isOpen,
-  onAccept,
-  onDecline,
-}: ConsentDialogProps) {
+export default function ConsentDialog({ isOpen, onAccept, onDecline }: ConsentDialogProps) {
   const { t } = useI18n();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -44,9 +40,7 @@ export default function ConsentDialog({
 
       {/* Dialog */}
       <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">
-          {t('consent.title')}
-        </h2>
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('consent.title')}</h2>
 
         <div className="space-y-4 text-sm text-gray-600">
           <p>{t('consent.body')}</p>

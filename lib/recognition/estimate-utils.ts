@@ -1,20 +1,18 @@
-import type { RecognitionItem } from "@/types/recognition";
+import type { RecognitionItem } from '@/types/recognition';
 
 export interface DerivedPortion {
   portionSize: number;
   portionUnit: string;
-  containerSize?: RecognitionItem["containerSize"];
+  containerSize?: RecognitionItem['containerSize'];
   aiEstimatedCount?: number;
   aiEstimatedWeightGrams?: number;
 }
 
-export function parseEstimatedNumber(
-  value?: number | string
-): number | undefined {
-  if (typeof value === "number" && Number.isFinite(value)) {
+export function parseEstimatedNumber(value?: number | string): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) {
     return value;
   }
-  if (typeof value !== "string") return undefined;
+  if (typeof value !== 'string') return undefined;
 
   const matches = value.match(/(\d+(\.\d+)?)/g);
   if (!matches || matches.length === 0) return undefined;
@@ -29,13 +27,11 @@ export function parseEstimatedNumber(
 export function derivePortionFromRecognition(item: RecognitionItem): DerivedPortion {
   const estimatedWeight = parseEstimatedNumber(item.estimatedWeightGrams);
   const estimatedCount = parseEstimatedNumber(item.estimatedCount);
-  const portionUnit = item.portionUnit?.trim() || "份";
-  const countBasedUnits = ["片", "隻", "只", "塊", "顆", "朵"];
+  const portionUnit = item.portionUnit?.trim() || '份';
+  const countBasedUnits = ['片', '隻', '只', '塊', '顆', '朵'];
   const isCountUnit = countBasedUnits.includes(portionUnit);
   const countSize =
-    estimatedCount && estimatedCount > 0
-      ? Math.round(estimatedCount * 10) / 10
-      : undefined;
+    estimatedCount && estimatedCount > 0 ? Math.round(estimatedCount * 10) / 10 : undefined;
 
   return {
     portionSize: isCountUnit && countSize ? countSize : 1,

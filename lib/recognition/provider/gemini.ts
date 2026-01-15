@@ -152,6 +152,9 @@ function extractText(response: unknown): string | undefined {
   };
 
   const parts = responseWithCandidates.candidates?.[0]?.content?.parts ?? [];
-  const text = parts.map(part => part.text).filter(Boolean).join('');
+  const text = parts
+    .map((part) => part.text)
+    .filter(Boolean)
+    .join('');
   return text || undefined;
 }

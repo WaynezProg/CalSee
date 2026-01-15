@@ -129,7 +129,7 @@ export async function getNutrition(foodName: string): Promise<NutritionServiceRe
  */
 export async function getNutritionWithRetry(
   foodName: string,
-  maxRetries: number = 1
+  maxRetries: number = 1,
 ): Promise<NutritionServiceResult> {
   let lastError: NutritionServiceResult['error'];
 
@@ -144,7 +144,7 @@ export async function getNutritionWithRetry(
 
     // Wait before retry
     if (attempt < maxRetries) {
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
     }
   }
 
@@ -167,7 +167,7 @@ export async function getNutritionWithRetry(
  */
 export async function getAINutritionEstimate(
   foodName: string,
-  portionSize?: string
+  portionSize?: string,
 ): Promise<NutritionServiceResult> {
   const normalizedName = foodName.toLowerCase().trim();
   const normalizedPortion = portionSize?.toLowerCase().trim() || 'default';
@@ -275,7 +275,7 @@ export async function getAINutritionEstimate(
 async function getAINutritionEstimateWithRetry(
   foodName: string,
   portionSize?: string,
-  maxRetries: number = 2
+  maxRetries: number = 2,
 ): Promise<NutritionServiceResult> {
   let lastError: NutritionServiceResult['error'];
 
@@ -289,7 +289,7 @@ async function getAINutritionEstimateWithRetry(
     lastError = result.error;
 
     if (attempt < maxRetries) {
-      await new Promise(resolve => setTimeout(resolve, 800));
+      await new Promise((resolve) => setTimeout(resolve, 800));
     }
   }
 
@@ -312,7 +312,7 @@ async function getAINutritionEstimateWithRetry(
  */
 export async function getNutritionWithAIFallback(
   foodName: string,
-  portionSize?: string
+  portionSize?: string,
 ): Promise<NutritionServiceResult> {
   // First, try USDA database
   const usdaResult = await getNutritionWithRetry(foodName);

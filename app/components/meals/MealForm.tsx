@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import type { Meal, MealItem } from "@/types/sync";
-import { MealItemList } from "@/app/components/meals/MealItemList";
-import { OfflineIndicator } from "@/app/components/sync/OfflineIndicator";
-import { SyncStatus, type SyncStatusType } from "@/app/components/sync/SyncStatus";
-import { uploadPhotoWithThumbnail } from "@/lib/services/sync/photo-sync";
-import { isSyncError, syncMealWithQueue } from "@/lib/services/sync/meal-sync";
+import { useState } from 'react';
+import type { Meal, MealItem } from '@/types/sync';
+import { MealItemList } from '@/app/components/meals/MealItemList';
+import { OfflineIndicator } from '@/app/components/sync/OfflineIndicator';
+import { SyncStatus, type SyncStatusType } from '@/app/components/sync/SyncStatus';
+import { uploadPhotoWithThumbnail } from '@/lib/services/sync/photo-sync';
+import { isSyncError, syncMealWithQueue } from '@/lib/services/sync/meal-sync';
 
 const emptyItem: MealItem = {
-  foodName: "",
+  foodName: '',
   portionSize: 1,
-  portionUnit: "servings",
+  portionUnit: 'servings',
 };
 
 export function MealForm() {
@@ -21,7 +21,7 @@ export function MealForm() {
   const [status, setStatus] = useState<SyncStatusType | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
-  const addItem = () => setItems(prev => [...prev, { ...emptyItem }]);
+  const addItem = () => setItems((prev) => [...prev, { ...emptyItem }]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -38,10 +38,10 @@ export function MealForm() {
           photoId = uploaded.photoId;
         } catch (err) {
           const error = err as Error & { code?: string };
-          if (error.code === "quota_exceeded") {
-            setStatus("quota_exceeded");
+          if (error.code === 'quota_exceeded') {
+            setStatus('quota_exceeded');
           } else {
-            setStatus("failed");
+            setStatus('failed');
           }
           setIsSubmitting(false);
           return;
@@ -54,16 +54,16 @@ export function MealForm() {
         items,
       };
 
-      await syncMealWithQueue(meal, "create");
+      await syncMealWithQueue(meal, 'create');
       setItems([emptyItem]);
       setPhotoFile(null);
     } catch (err) {
-      if (isSyncError(err) && err.code === "conflict") {
-        setStatus("conflict");
+      if (isSyncError(err) && err.code === 'conflict') {
+        setStatus('conflict');
       } else {
-        setStatus("failed");
+        setStatus('failed');
       }
-      setStatusMessage("Failed to sync meal. It will retry in the background.");
+      setStatusMessage('Failed to sync meal. It will retry in the background.');
     } finally {
       setIsSubmitting(false);
     }
@@ -77,7 +77,7 @@ export function MealForm() {
           type="file"
           accept="image/*"
           className="mt-2 block w-full"
-          onChange={event => setPhotoFile(event.target.files?.[0] ?? null)}
+          onChange={(event) => setPhotoFile(event.target.files?.[0] ?? null)}
         />
       </div>
 
@@ -96,7 +96,7 @@ export function MealForm() {
           className="rounded bg-black px-4 py-2 text-sm font-semibold text-white"
           disabled={isSubmitting}
         >
-          {isSubmitting ? "Saving..." : "Save meal"}
+          {isSubmitting ? 'Saving...' : 'Save meal'}
         </button>
       </div>
 

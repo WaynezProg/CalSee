@@ -1,4 +1,5 @@
 # CalSee
+
 [![Demo Video](https://img.youtube.com/vi/QGiLpQ6wZDE/0.jpg)](https://youtube.com/shorts/QGiLpQ6wZDE)
 
 > 💡 **點擊上圖觀看完整示範影片，展示應用程式的完整工作流程。**
@@ -40,6 +41,7 @@ CalSee 是一個以 Next.js 開發的概念驗證專案，讓使用者透過拍�
 ### 辨識 API（擇一）
 
 **選項 1：OpenAI Vision API（推薦）**
+
 1. 至 [platform.openai.com](https://platform.openai.com/signup) 註冊帳號
 2. 前往 [API Keys](https://platform.openai.com/api-keys) 頁面
 3. 點擊「Create new secret key」
@@ -48,6 +50,7 @@ CalSee 是一個以 Next.js 開發的概念驗證專案，讓使用者透過拍�
 > 注意：需要綁定付款方式。詳見[定價說明](https://openai.com/pricing)。
 
 **選項 2：Google Gemini API**
+
 1. 至 [Google AI Studio](https://aistudio.google.com/) 建立專案
 2. 建立 API 金鑰
 3. 設定 `RECOGNITION_API_TYPE=gemini`
@@ -58,6 +61,7 @@ CalSee 是一個以 Next.js 開發的概念驗證專案，讓使用者透過拍�
 ### 營養 API
 
 **USDA FoodData Central API（免費）**
+
 1. 前往 [API 金鑰申請頁面](https://fdc.nal.usda.gov/api-key-signup.html)
 2. 填寫姓名與電子郵件
 3. 查收郵件取得 API 金鑰（通常幾分鐘內寄達）

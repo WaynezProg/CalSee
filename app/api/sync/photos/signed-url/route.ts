@@ -1,12 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
-import { prisma } from "@/lib/db/prisma/client";
-import { getSignedPhotoUrl } from "@/lib/db/s3/client";
+import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/auth';
+import { prisma } from '@/lib/db/prisma/client';
+import { getSignedPhotoUrl } from '@/lib/db/s3/client';
 
 export async function GET(request: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "unauthorized", message: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: 'unauthorized', message: 'Unauthorized' }, { status: 401 });
   }
 
   // Build list of user IDs to query (primary + provider ID if different)
@@ -14,23 +14,23 @@ export async function GET(request: NextRequest) {
   if (session.user.providerId && session.user.providerId !== session.user.id) {
     userIds.push(session.user.providerId);
   }
-  const photoId = request.nextUrl.searchParams.get("photoId");
-  const type = request.nextUrl.searchParams.get("type") === "thumbnail" ? "thumbnail" : "main";
+  const photoId = request.nextUrl.searchParams.get('photoId');
+  const type = request.nextUrl.searchParams.get('type') === 'thumbnail' ? 'thumbnail' : 'main';
 
   if (!photoId) {
     return NextResponse.json(
-      { error: "validation_error", message: "photoId is required" },
+      { error: 'validation_error', message: 'photoId is required' },
       { status: 400 },
     );
   }
 
   const photo = await prisma.photo.findUnique({ where: { id: photoId } });
   if (!photo) {
-    return NextResponse.json({ error: "not_found", message: "Photo not found" }, { status: 404 });
+    return NextResponse.json({ error: 'not_found', message: 'Photo not found' }, { status: 404 });
   }
 
   if (!userIds.includes(photo.userId)) {
-    return NextResponse.json({ error: "forbidden", message: "Forbidden" }, { status: 403 });
+    return NextResponse.json({ error: 'forbidden', message: 'Forbidden' }, { status: 403 });
   }
 
   try {
@@ -40,9 +40,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ url, expiresAt, expiresIn });
   } catch (error) {
-    console.error("[sync] Failed to generate signed URL", error);
+    console.error('[sync] Failed to generate signed URL', error);
     return NextResponse.json(
-      { error: "server_error", message: "Failed to generate signed URL" },
+      { error: 'server_error', message: 'Failed to generate signed URL' },
       { status: 500 },
     );
   }

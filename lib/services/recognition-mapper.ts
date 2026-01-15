@@ -83,7 +83,7 @@ export function mapRecognitionItemToMealItem(item: RecognitionItem): MealItem {
  * @returns Array of MealItem objects
  */
 export function mapRecognitionResponseToMealItems(
-  response: MultiItemRecognitionResponse
+  response: MultiItemRecognitionResponse,
 ): MealItem[] {
   // Map ALL items - never take only first item (FR-006)
   return response.items.map(mapRecognitionItemToMealItem);
@@ -127,7 +127,7 @@ export function updateMealItemNutrition(
     carbs: number | null;
     fat: number | null;
     nutritionSource: string | null;
-  }
+  },
 ): MealItem {
   return {
     ...item,
@@ -159,6 +159,6 @@ export function calculateTotalNutrition(items: MealItem[]): {
       totalCarbs: totals.totalCarbs + (item.carbs ?? 0),
       totalFat: totals.totalFat + (item.fat ?? 0),
     }),
-    { totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFat: 0 }
+    { totalCalories: 0, totalProtein: 0, totalCarbs: 0, totalFat: 0 },
   );
 }

@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { signOut } from "next-auth/react";
+import { useState } from 'react';
+import { signOut } from 'next-auth/react';
 
 export default function SignOutButton() {
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -9,7 +9,7 @@ export default function SignOutButton() {
   const handleSignOut = async () => {
     setIsSigningOut(true);
     try {
-      await signOut({ callbackUrl: "/" });
+      await signOut({ callbackUrl: '/' });
     } finally {
       setIsSigningOut(false);
     }
@@ -22,7 +22,7 @@ export default function SignOutButton() {
       disabled={isSigningOut}
       className="text-xs font-medium text-gray-500 transition-colors hover:text-gray-700 disabled:cursor-not-allowed"
     >
-      {isSigningOut ? "Signing out..." : "Sign out"}
+      {isSigningOut ? 'Signing out...' : 'Sign out'}
     </button>
   );
 }
