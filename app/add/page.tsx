@@ -78,30 +78,6 @@ export default function AddMealPage() {
     };
   }, [photoBlob]);
 
-  // Handle image captured
-  const handleImageCaptured = useCallback(
-    (blob: Blob) => {
-      setPhotoBlob(blob);
-      setPhotoFile(
-        new File([blob], `meal-${Date.now()}.jpg`, {
-          type: blob.type || 'image/jpeg',
-        }),
-      );
-      setError(null);
-
-      // Check if we need consent
-      if (hasConsent === false) {
-        setShowConsentDialog(true);
-        setPendingRecognition(true);
-      } else if (hasConsent === true) {
-        // Start recognition immediately
-        startRecognition(blob);
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- startRecognition is stable
-    [hasConsent],
-  );
-
   // Start recognition process
   const startRecognition = useCallback(
     async (blob: Blob) => {
@@ -134,6 +110,29 @@ export default function AddMealPage() {
       }
     },
     [t],
+  );
+
+  // Handle image captured
+  const handleImageCaptured = useCallback(
+    (blob: Blob) => {
+      setPhotoBlob(blob);
+      setPhotoFile(
+        new File([blob], `meal-${Date.now()}.jpg`, {
+          type: blob.type || 'image/jpeg',
+        }),
+      );
+      setError(null);
+
+      // Check if we need consent
+      if (hasConsent === false) {
+        setShowConsentDialog(true);
+        setPendingRecognition(true);
+      } else if (hasConsent === true) {
+        // Start recognition immediately
+        startRecognition(blob);
+      }
+    },
+    [hasConsent, startRecognition],
   );
 
   // Handle retry recognition

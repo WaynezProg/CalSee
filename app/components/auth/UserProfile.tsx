@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import Image from 'next/image';
 import ErrorMessage from '@/app/components/ui/ErrorMessage';
@@ -9,18 +9,19 @@ import SignOutButton from '@/app/components/auth/SignOutButton';
 export default function UserProfile() {
   const { data: session, status } = useSession();
   const [imageError, setImageError] = useState(false);
-  const [lastAuthenticatedStatus, setLastAuthenticatedStatus] = useState<
-    'authenticated' | null
-  >(null);
 
-  // Derive if we had a session from state that only updates when authenticated
-  const hadSession = useMemo(() => {
-    if (status === 'authenticated' && lastAuthenticatedStatus !== 'authenticated') {
-      // Defer the state update to avoid render-phase updates
-      queueMicrotask(() => setLastAuthenticatedStatus('authenticated'));
-    }
-    return lastAuthenticatedStatus === 'authenticated';
-  }, [status, lastAuthenticatedStatus]);
+  // Track if user was ever authenticated using a lazy initializer
+  // The initializer only runs once, then useState preserves the value
+  const [hadSession, setHadSession] = useState(false);
+
+  // Derive new hadSession value - only update when transitioning to authenticated
+  // This avoids the ESLint set-state-in-effect error by computing the value
+  // and only calling setState when absolutely necessary (guarded by condition)
+  if (status === 'authenticated' && !hadSession) {
+    // This is intentional: updating state during render when we detect
+    // a transition to authenticated. React handles this case specifically.
+    setHadSession(true);
+  }
 
   // Reset image error when image URL changes - use key-based approach instead
   const imageKey = session?.user?.image ?? 'no-image';
