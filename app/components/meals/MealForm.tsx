@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
+import { useI18n } from '@/lib/i18n';
 import type { Meal, MealItem } from '@/types/sync';
 import { MealItemList } from '@/app/components/meals/MealItemList';
 import { OfflineIndicator } from '@/app/components/sync/OfflineIndicator';
@@ -15,18 +16,34 @@ const emptyItem: MealItem = {
 };
 
 export function MealForm() {
+  const { t } = useI18n();
   const [items, setItems] = useState<MealItem[]>([emptyItem]);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [status, setStatus] = useState<SyncStatusType | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
 
-  const addItem = () => setItems((prev) => [...prev, { ...emptyItem }]);
+  // Validation: at least one item with non-empty food name
+  const isValid = useMemo(() => {
+    return items.some((item) => item.foodName.trim());
+  }, [items]);
+
+  const addItem = useCallback(() => setItems((prev) => [...prev, { ...emptyItem }]), []);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    setHasAttemptedSubmit(true);
     setStatus(null);
     setStatusMessage(null);
+
+    // Validate before submission
+    if (!isValid) {
+      setStatus('failed');
+      setStatusMessage(t('mealForm.noItemsError'));
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -57,6 +74,9 @@ export function MealForm() {
       await syncMealWithQueue(meal, 'create');
       setItems([emptyItem]);
       setPhotoFile(null);
+      setHasAttemptedSubmit(false);
+      setStatus('success');
+      setStatusMessage(t('mealForm.saveSuccess'));
     } catch (err) {
       if (isSyncError(err) && err.code === 'conflict') {
         setStatus('conflict');
@@ -81,22 +101,23 @@ export function MealForm() {
         />
       </div>
 
-      <MealItemList items={items} onChange={setItems} />
+      <MealItemList items={items} onChange={setItems} onAddItem={addItem} disabled={isSubmitting} />
+
+      {/* Validation feedback */}
+      {hasAttemptedSubmit && !isValid && (
+        <p className="text-sm text-red-600" role="alert">
+          {t('mealForm.noItemsError')}
+        </p>
+      )}
 
       <div className="flex items-center gap-3">
         <button
-          type="button"
-          className="rounded border border-gray-300 px-3 py-2 text-sm"
-          onClick={addItem}
-        >
-          Add item
-        </button>
-        <button
           type="submit"
-          className="rounded bg-black px-4 py-2 text-sm font-semibold text-white"
+          className="rounded bg-black px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
           disabled={isSubmitting}
+          aria-disabled={isSubmitting}
         >
-          {isSubmitting ? 'Saving...' : 'Save meal'}
+          {isSubmitting ? t('mealForm.saving') : t('mealForm.save')}
         </button>
       </div>
 

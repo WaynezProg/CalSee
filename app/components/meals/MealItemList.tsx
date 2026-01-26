@@ -16,6 +16,9 @@ import { resolvePortionScale, scaleNutritionValues } from '@/lib/nutrition/porti
 import type { MealItem, SugarLevel, IceLevel } from '@/types/sync';
 import { BeverageOptions } from './BeverageOptions';
 
+// Constants defined at module level to avoid re-creation on every render
+const QUICK_PORTION_VALUES = [0.5, 1, 2] as const;
+
 /**
  * Parse portion input string to number.
  * Supports:
@@ -119,10 +122,10 @@ export function MealItemList({
         )}
       </div>
 
-      {/* Item cards */}
+      {/* Item cards - use foodName in key to reset state when food changes */}
       {items.map((item, index) => (
         <MealItemCard
-          key={item.id || index}
+          key={`${item.id || index}-${item.foodName}`}
           item={item}
           index={index}
           onUpdate={updateItem}
@@ -185,7 +188,7 @@ function MealItemCard({
   const [hasManualOverride, setHasManualOverride] = useState(false);
   const [showDetailedNutrition, setShowDetailedNutrition] = useState(false);
   const [portionInput, setPortionInput] = useState(() => `${item.portionSize}`);
-  const previousFoodNameRef = useRef(item.foodName);
+  // Track previous values to detect changes
   const previousPortionSizeRef = useRef(item.portionSize);
   const previousPortionUnitRef = useRef(item.portionUnit);
   const previousContainerSizeRef = useRef(item.containerSize);
@@ -205,19 +208,27 @@ function MealItemCard({
     enableNutritionLookup && item.foodName.trim().length >= 2,
   );
 
-  // Reset manual override when food name changes
-  useEffect(() => {
-    if (item.foodName !== previousFoodNameRef.current) {
-      previousFoodNameRef.current = item.foodName;
-      setManualNutritionMode(false);
-      setHasManualOverride(false);
-    }
-  }, [item.foodName]);
+  // Note: Manual override state resets automatically when foodName changes
+  // because the parent uses foodName in the key prop, causing remount.
 
+  // Sync portionInput with item.portionSize when it changes externally
+  // Using useEffect to avoid accessing refs during render
+  const lastPortionSizeForInput = useRef(item.portionSize);
   useEffect(() => {
-    setPortionInput(item.portionSize ? `${item.portionSize}` : '');
+    if (item.portionSize !== lastPortionSizeForInput.current) {
+      lastPortionSizeForInput.current = item.portionSize;
+      // Only update input if the value actually differs
+      const currentInputValue = parsePortion(portionInput);
+      if (currentInputValue !== item.portionSize) {
+        setPortionInput(item.portionSize ? `${item.portionSize}` : '');
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Only sync when portionSize prop changes
   }, [item.portionSize]);
 
+  // Handle portion/unit changes - scale nutrition or reset manual mode
+  // Note: This effect legitimately needs to sync local state with prop changes.
+  // The setState calls are intentional for this synchronization pattern.
   useEffect(() => {
     const sizeChanged = item.portionSize !== previousPortionSizeRef.current;
     const unitChanged = item.portionUnit !== previousPortionUnitRef.current;
@@ -283,6 +294,7 @@ function MealItemCard({
       return;
     }
 
+    // Reset manual mode when portion changes and not in manual mode
     setManualNutritionMode(false);
     setHasManualOverride(false);
   }, [
@@ -480,7 +492,7 @@ function MealItemCard({
             />
             {/* Quick portion buttons */}
             <div className="flex gap-1">
-              {[0.5, 1, 2].map((val) => (
+              {QUICK_PORTION_VALUES.map((val) => (
                 <button
                   key={val}
                   type="button"

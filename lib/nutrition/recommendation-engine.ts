@@ -5,7 +5,6 @@ import type {
   RecommendationPriority,
 } from '@/types/weekly-report';
 import {
-  DRI_REFERENCE,
   RECOMMENDATION_NUTRIENTS,
   DEFICIENCY_THRESHOLDS,
   getRDA,

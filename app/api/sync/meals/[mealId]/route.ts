@@ -3,6 +3,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/db/prisma/client';
 import { deletePhoto } from '@/lib/db/s3/client';
 import { calculateNutritionTotals } from '@/lib/utils/nutrition-calculator';
+import type { MealItem } from '@/types/sync';
 
 interface RouteParams {
   params: Promise<{ mealId: string }>;
@@ -132,7 +133,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
         totalFat: totals.totalFat,
         items: {
           deleteMany: {},
-          create: data.items.map((item: any) => ({
+          create: data.items.map((item: MealItem) => ({
             foodName: item.foodName,
             portionSize: item.portionSize,
             portionUnit: item.portionUnit,

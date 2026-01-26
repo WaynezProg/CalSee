@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import ErrorMessage from '@/app/components/ui/ErrorMessage';
 import type { AuthErrorType } from '@/types/auth';
 
@@ -39,12 +40,12 @@ export default async function AuthErrorPage({
           </p>
         </div>
         <ErrorMessage errorType={errorType} />
-        <a
+        <Link
           href="/"
           className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800"
         >
           Return to home
-        </a>
+        </Link>
       </div>
     </div>
   );

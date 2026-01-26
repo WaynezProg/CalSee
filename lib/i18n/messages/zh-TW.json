@@ -132,6 +132,7 @@
     "cancel": "取消",
     "save": "儲存",
     "saving": "儲存中...",
+    "saveSuccess": "儲存成功",
     "noItemsError": "請至少輸入一個食物項目",
     "syncFailed": "同步失敗，將在背景重試",
     "portionOptions": {
@@ -174,7 +175,27 @@
     "emptySubtitle": "開始記錄您的第一餐吧！",
     "today": "今天 {time}",
     "yesterday": "昨天 {time}",
-    "caloriesUnit": "kcal"
+    "caloriesUnit": "kcal",
+    "mealLabel": "這筆餐點",
+    "photoLoadFailed": "無法載入照片",
+    "deleteFailed": "刪除失敗，將在背景重試",
+    "loadingPhoto": "載入照片中...",
+    "unableToLoadPhoto": "無法載入照片",
+    "syncTitle": "同步飲食記錄",
+    "syncCount": "{count} 筆餐點已同步至雲端",
+    "syncCountSingle": "1 筆餐點已同步至雲端",
+    "refresh": "重新整理",
+    "refreshing": "重新整理中...",
+    "loading": "載入同步的飲食記錄...",
+    "noSyncedMeals": "尚無同步的飲食記錄",
+    "addMealHint": "新增餐點後會顯示在這裡",
+    "noPhoto": "無照片",
+    "itemCount": "{count} 個項目",
+    "itemCountSingle": "1 個項目",
+    "viewDetail": "查看詳情",
+    "viewPhoto": "查看照片",
+    "hidePhoto": "隱藏照片",
+    "deleteMeal": "刪除"
   },
   "mealDetail": {
     "editTitle": "編輯飲食記錄",
@@ -198,6 +219,11 @@
     "cancel": "取消",
     "confirm": "刪除",
     "deleting": "刪除中..."
+  },
+  "errorBoundary": {
+    "title": "發生錯誤",
+    "defaultMessage": "發生未預期的錯誤",
+    "tryAgain": "重試"
   },
   "consent": {
     "title": "雲端辨識服務同意",

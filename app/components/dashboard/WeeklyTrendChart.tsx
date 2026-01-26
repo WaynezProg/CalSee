@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { useI18n } from '@/lib/i18n';
 import type { DailyNutritionData } from '@/types/weekly-report';
 
@@ -16,7 +16,7 @@ interface DayBarProps {
   onSelect: () => void;
 }
 
-function DayBar({ day, maxCalories, isSelected, onSelect }: DayBarProps) {
+const DayBar = memo(function DayBar({ day, maxCalories, isSelected, onSelect }: DayBarProps) {
   const heightPercent = maxCalories > 0 ? (day.totals.calories / maxCalories) * 100 : 0;
 
   return (
@@ -25,6 +25,8 @@ function DayBar({ day, maxCalories, isSelected, onSelect }: DayBarProps) {
       className={`flex flex-col items-center flex-1 min-w-0 transition-all ${
         isSelected ? 'scale-105' : 'hover:scale-102'
       }`}
+      aria-pressed={isSelected}
+      aria-label={`${day.dayLabel}: ${day.hasData ? `${day.totals.calories} kcal` : 'No data'}`}
     >
       <div className="w-full h-24 flex items-end justify-center mb-1">
         {day.hasData ? (
@@ -33,9 +35,11 @@ function DayBar({ day, maxCalories, isSelected, onSelect }: DayBarProps) {
               isSelected ? 'bg-blue-500' : 'bg-blue-300 hover:bg-blue-400'
             }`}
             style={{ height: `${Math.max(heightPercent, 4)}%` }}
+            role="img"
+            aria-label={`${day.totals.calories} calories`}
           />
         ) : (
-          <div className="w-6 h-1 bg-slate-200 rounded" />
+          <div className="w-6 h-1 bg-slate-200 rounded" aria-hidden="true" />
         )}
       </div>
       <span className={`text-xs ${isSelected ? 'text-blue-600 font-medium' : 'text-slate-500'}`}>
@@ -43,13 +47,13 @@ function DayBar({ day, maxCalories, isSelected, onSelect }: DayBarProps) {
       </span>
     </button>
   );
-}
+});
 
 interface DayDetailProps {
   day: DailyNutritionData;
 }
 
-function DayDetail({ day }: DayDetailProps) {
+const DayDetail = memo(function DayDetail({ day }: DayDetailProps) {
   const { t } = useI18n();
 
   if (!day.hasData) {
@@ -80,7 +84,7 @@ function DayDetail({ day }: DayDetailProps) {
       </div>
     </div>
   );
-}
+});
 
 export default function WeeklyTrendChart({ dailyData, maxCalories }: WeeklyTrendChartProps) {
   const { t } = useI18n();

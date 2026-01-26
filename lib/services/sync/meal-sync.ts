@@ -141,7 +141,7 @@ export async function processSyncQueue(): Promise<void> {
 
       await markSyncQueueItemCompleted(item.operationId);
       await removeSyncQueueItem(item.operationId);
-    } catch (error) {
+    } catch {
       syncMetrics.failureCount += 1;
       const retryDelay = getBackoffDelay(item.retryCount + 1);
       await updateSyncQueueItem({

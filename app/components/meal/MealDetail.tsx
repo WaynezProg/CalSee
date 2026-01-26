@@ -7,6 +7,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import type { Meal, MealFormData } from '@/types/meal';
 import { getPhoto, updateMeal, deleteMeal } from '@/lib/db/indexeddb';
 import MealForm from './MealForm';
@@ -30,12 +31,14 @@ export default function MealDetail({ meal, onClose, onUpdated, onDeleted }: Meal
 
   // Load photo
   useEffect(() => {
+    let currentUrl: string | null = null;
+
     const loadPhoto = async () => {
       try {
         const photo = await getPhoto(meal.photoId);
         if (photo) {
-          const url = URL.createObjectURL(photo.blob);
-          setPhotoUrl(url);
+          currentUrl = URL.createObjectURL(photo.blob);
+          setPhotoUrl(currentUrl);
         }
       } catch (err) {
         console.error('Failed to load photo:', err);
@@ -44,10 +47,10 @@ export default function MealDetail({ meal, onClose, onUpdated, onDeleted }: Meal
 
     loadPhoto();
 
-    // Cleanup
+    // Cleanup - use local variable to avoid stale closure
     return () => {
-      if (photoUrl) {
-        URL.revokeObjectURL(photoUrl);
+      if (currentUrl) {
+        URL.revokeObjectURL(currentUrl);
       }
     };
   }, [meal.photoId]);
@@ -172,11 +175,13 @@ export default function MealDetail({ meal, onClose, onUpdated, onDeleted }: Meal
 
           {/* Photo */}
           {photoUrl && (
-            <div className="mb-4">
-              <img
+            <div className="relative mb-4 h-64 w-full">
+              <Image
                 src={photoUrl}
                 alt={meal.foodName}
-                className="w-full max-h-64 object-contain rounded-lg bg-gray-100"
+                fill
+                className="object-contain rounded-lg bg-gray-100"
+                unoptimized
               />
             </div>
           )}

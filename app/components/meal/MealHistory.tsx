@@ -7,6 +7,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import Image from 'next/image';
 import type { Meal } from '@/types/meal';
 import { getAllMeals, getPhoto } from '@/lib/db/indexeddb';
 import { useI18n } from '@/lib/i18n';
@@ -73,6 +74,7 @@ export default function MealHistory({ onMealSelect }: MealHistoryProps) {
       photoUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
       photoUrlsRef.current = [];
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Load once on mount
   }, []);
 
   const formatDate = useCallback(
@@ -144,9 +146,9 @@ export default function MealHistory({ onMealSelect }: MealHistoryProps) {
           className="w-full bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex items-center gap-4 hover:shadow-md transition-shadow text-left"
         >
           {/* Photo thumbnail */}
-          <div className="w-16 h-16 bg-slate-100 rounded-xl overflow-hidden flex-shrink-0">
+          <div className="relative w-16 h-16 bg-slate-100 rounded-xl overflow-hidden flex-shrink-0">
             {meal.photoUrl ? (
-              <img src={meal.photoUrl} alt={meal.foodName} className="w-full h-full object-cover" />
+              <Image src={meal.photoUrl} alt={meal.foodName} fill className="object-cover" unoptimized />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
                 <svg

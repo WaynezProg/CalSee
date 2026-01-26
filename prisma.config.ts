@@ -25,9 +25,11 @@ try {
   // Ignore missing .env.local; rely on process environment instead.
 }
 
-export default {
+const prismaConfig = {
   schema: 'prisma/schema.prisma',
   datasource: {
     url: process.env.DATABASE_URL ?? '',
   },
 };
+
+export default prismaConfig;

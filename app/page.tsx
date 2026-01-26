@@ -9,6 +9,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useSession } from 'next-auth/react';
 import AppLayout from '@/app/components/layout/AppLayout';
 import AppLogo from '@/app/components/ui/AppLogo';
@@ -273,8 +274,6 @@ export default function Home() {
     [locale, t],
   );
 
-  const userName = session?.user?.name?.split(' ')[0] || '';
-
   return (
     <AppLayout>
       {/* Header */}
@@ -283,10 +282,13 @@ export default function Home() {
           <div className="flex items-center justify-between mb-6">
             <AppLogo />
             {session?.user?.image ? (
-              <img
+              <Image
                 src={session.user.image}
                 alt={session.user.name || ''}
-                className="w-10 h-10 rounded-full border-2 border-white/30"
+                width={40}
+                height={40}
+                className="rounded-full border-2 border-white/30"
+                unoptimized
               />
             ) : (
               <div className="w-10 h-10 rounded-full bg-blue-400 flex items-center justify-center">
@@ -414,12 +416,14 @@ export default function Home() {
                   className="flex items-center gap-4 bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow"
                 >
                   {/* Photo */}
-                  <div className="w-14 h-14 bg-slate-100 rounded-xl overflow-hidden flex-shrink-0">
+                  <div className="relative w-14 h-14 bg-slate-100 rounded-xl overflow-hidden flex-shrink-0">
                     {meal.photoUrl ? (
-                      <img
+                      <Image
                         src={meal.photoUrl}
                         alt={meal.foodName}
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
+                        unoptimized
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">

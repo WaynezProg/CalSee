@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, memo } from 'react';
+import Image from 'next/image';
 import { useI18n } from '@/lib/i18n';
 import type { Meal } from '@/types/sync';
 import { cacheThumbnail, deleteThumbnail, getThumbnail } from '@/lib/db/indexeddb/thumbnail-cache';
 import { syncMealWithQueue } from '@/lib/services/sync/meal-sync';
 import { MealDetailModal } from './MealDetailModal';
+import { SkeletonPulse } from '@/app/components/ui/LoadingSkeleton';
 
 interface MealWithThumbnail extends Meal {
   thumbnailUrl?: string;
@@ -57,8 +59,8 @@ export function MealHistory() {
       // within the same session while allowing retries across refresh cycles
       loadingPhotoIdsRef.current.clear();
       failedPhotoIdsRef.current.clear();
-    } catch (err) {
-      setError('Unable to load meal history');
+    } catch {
+      setError(t('errors.mealLoadFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -219,8 +221,8 @@ export function MealHistory() {
             : item,
         ),
       );
-    } catch (err) {
-      setError('Unable to load full photo');
+    } catch {
+      setError(t('mealHistory.photoLoadFailed'));
     }
   };
 
@@ -241,7 +243,7 @@ export function MealHistory() {
 
   const handleDeleteMeal = async (meal: MealWithThumbnail) => {
     if (!meal.id) return;
-    const confirmed = window.confirm('Delete this meal?');
+    const confirmed = window.confirm(t('deleteConfirm.message', { itemName: t('mealHistory.mealLabel') }));
     if (!confirmed) return;
 
     try {
@@ -253,8 +255,8 @@ export function MealHistory() {
         failedPhotoIdsRef.current.delete(meal.photoId);
       }
       setMeals((prev) => prev.filter((item) => item.id !== meal.id));
-    } catch (err) {
-      setError('Unable to delete meal. It will retry in the background.');
+    } catch {
+      setError(t('mealHistory.deleteFailed'));
     }
   };
 
@@ -292,9 +294,11 @@ export function MealHistory() {
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-slate-900">Sync meal history</h2>
+          <h2 className="text-lg font-semibold text-slate-900">{t('mealHistory.syncTitle')}</h2>
           <p className="text-sm text-slate-500">
-            {meals.length} meal{meals.length === 1 ? '' : 's'} synced to the cloud.
+            {meals.length === 1
+              ? t('mealHistory.syncCountSingle')
+              : t('mealHistory.syncCount', { count: meals.length })}
           </p>
         </div>
         <button
@@ -303,7 +307,7 @@ export function MealHistory() {
           onClick={loadMeals}
           disabled={isLoading}
         >
-          {isLoading ? 'Refreshing...' : 'Refresh'}
+          {isLoading ? t('mealHistory.refreshing') : t('mealHistory.refresh')}
         </button>
       </div>
 
@@ -315,14 +319,14 @@ export function MealHistory() {
 
       {isLoading && meals.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
-          Loading synced meals...
+          {t('mealHistory.loading')}
         </div>
       ) : null}
 
       {!isLoading && meals.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center">
-          <p className="text-sm font-medium text-slate-700">No synced meals yet</p>
-          <p className="mt-1 text-sm text-slate-500">Add a multi-item meal to see it here.</p>
+          <p className="text-sm font-medium text-slate-700">{t('mealHistory.noSyncedMeals')}</p>
+          <p className="mt-1 text-sm text-slate-500">{t('mealHistory.addMealHint')}</p>
         </div>
       ) : null}
 
@@ -343,16 +347,18 @@ export function MealHistory() {
               className="rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm transition hover:border-slate-300"
             >
               <div className="flex gap-4">
-                <div className="h-16 w-16 overflow-hidden rounded-2xl bg-slate-100">
+                <div className="relative h-16 w-16 overflow-hidden rounded-2xl bg-slate-100">
                   {meal.thumbnailUrl ? (
-                    <img
+                    <Image
                       src={meal.thumbnailUrl}
                       alt="Meal thumbnail"
-                      className="h-full w-full object-cover"
+                      fill
+                      className="object-cover"
+                      unoptimized
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-xs text-slate-400">
-                      No photo
+                      {t('mealHistory.noPhoto')}
                     </div>
                   )}
                 </div>
@@ -365,7 +371,9 @@ export function MealHistory() {
                       </span>
                     )}
                     <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-600">
-                      {meal.items.length} item{meal.items.length === 1 ? '' : 's'}
+                      {meal.items.length === 1
+                        ? t('mealHistory.itemCountSingle')
+                        : t('mealHistory.itemCount', { count: meal.items.length })}
                     </span>
                   </div>
                   <div className="space-y-1">
@@ -384,7 +392,7 @@ export function MealHistory() {
                   className="inline-flex items-center gap-2 rounded-full border border-blue-200 px-3 py-1 text-blue-600 hover:bg-blue-50"
                   onClick={() => handleOpenDetail(meal)}
                 >
-                  查看詳情
+                  {t('mealHistory.viewDetail')}
                 </button>
                 {meal.photoId && (
                   <button
@@ -393,7 +401,11 @@ export function MealHistory() {
                     onClick={() => handleTogglePhoto(meal)}
                     disabled={isPhotoLoading}
                   >
-                    {isPhotoLoading ? 'Loading photo...' : isExpanded ? 'Hide photo' : 'View photo'}
+                    {isPhotoLoading
+                      ? t('mealHistory.loadingPhoto')
+                      : isExpanded
+                        ? t('mealHistory.hidePhoto')
+                        : t('mealHistory.viewPhoto')}
                   </button>
                 )}
                 <button
@@ -401,13 +413,21 @@ export function MealHistory() {
                   className="inline-flex items-center gap-2 rounded-full border border-red-200 px-3 py-1 text-red-600 hover:bg-red-50"
                   onClick={() => handleDeleteMeal(meal)}
                 >
-                  Delete meal
+                  {t('mealHistory.deleteMeal')}
                 </button>
               </div>
 
-              {meal.photoId && isExpanded && meal.fullPhotoUrl && (
-                <div className="mt-3 overflow-hidden rounded-2xl border border-slate-200">
-                  <img src={meal.fullPhotoUrl} alt="Meal" className="w-full" />
+              {meal.photoId && isExpanded && (
+                <div className="relative mt-3 aspect-video w-full overflow-hidden rounded-2xl border border-slate-200">
+                  {isPhotoLoading ? (
+                    <PhotoLoadingSkeleton />
+                  ) : meal.fullPhotoUrl ? (
+                    <Image src={meal.fullPhotoUrl} alt="Meal" fill className="object-contain" unoptimized />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-sm text-slate-400">
+                      {t('mealHistory.unableToLoadPhoto')}
+                    </div>
+                  )}
                 </div>
               )}
             </li>
@@ -429,3 +449,40 @@ export function MealHistory() {
     </div>
   );
 }
+
+/**
+ * Photo loading skeleton with spinner overlay
+ */
+const PhotoLoadingSkeleton = memo(function PhotoLoadingSkeleton() {
+  return (
+    <div className="relative h-full w-full" role="status" aria-label="Loading photo">
+      <SkeletonPulse className="h-full w-full" />
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-2">
+          <svg
+            className="h-8 w-8 animate-spin text-slate-400"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            />
+          </svg>
+          <span className="text-sm text-slate-500">Loading photo...</span>
+        </div>
+      </div>
+    </div>
+  );
+});

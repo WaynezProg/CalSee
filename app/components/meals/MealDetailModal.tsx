@@ -8,8 +8,10 @@
  * Reuses MealItemList for editing functionality.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, memo } from 'react';
+import Image from 'next/image';
 import { useI18n } from '@/lib/i18n';
+import { useModal } from '@/lib/hooks';
 import type { Meal, MealItem, MealType } from '@/types/sync';
 import { MealItemList } from './MealItemList';
 import { TotalNutritionSummary } from './TotalNutritionSummary';
@@ -142,7 +144,7 @@ export function MealDetailModal({
       };
       await onSave(updatedMeal);
       setIsEditing(false);
-    } catch (err) {
+    } catch {
       setError(t('mealForm.syncFailed'));
     } finally {
       setIsSaving(false);
@@ -161,28 +163,47 @@ export function MealDetailModal({
     try {
       await onDelete(meal);
       onClose();
-    } catch (err) {
+    } catch {
       setError(t('errors.mealDeleteFailed'));
     } finally {
       setIsDeleting(false);
     }
   };
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     resetState();
     onClose();
-  };
+  }, [resetState, onClose]);
+
+  // Use modal hook for accessibility (focus trap, escape key, body scroll lock)
+  const { modalRef, handleOverlayClick } = useModal({
+    isOpen,
+    onClose: handleClose,
+    closeOnEscape: !isSaving && !isDeleting,
+    closeOnOverlayClick: !isSaving && !isDeleting,
+    trapFocus: true,
+  });
 
   if (!isOpen) return null;
 
   const displayItems = isEditing ? editedItems : meal.items;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="max-h-[90vh] w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-xl">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      onClick={handleOverlayClick}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="meal-detail-title"
+    >
+      <div
+        ref={modalRef}
+        className="max-h-[90vh] w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-xl"
+        tabIndex={-1}
+      >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
-          <h2 className="text-lg font-semibold text-gray-900">
+          <h2 id="meal-detail-title" className="text-lg font-semibold text-gray-900">
             {isEditing ? t('mealDetail.editTitle') : t('mealDetail.viewTitle')}
           </h2>
           <button
@@ -207,8 +228,8 @@ export function MealDetailModal({
         <div className="max-h-[calc(90vh-140px)] overflow-y-auto px-4 py-4">
           {/* Photo */}
           {photoUrl && (
-            <div className="mb-4 overflow-hidden rounded-xl">
-              <img src={photoUrl} alt="Meal photo" className="w-full object-cover" />
+            <div className="relative mb-4 aspect-video w-full overflow-hidden rounded-xl">
+              <Image src={photoUrl} alt="Meal photo" fill className="object-cover" unoptimized />
             </div>
           )}
 
@@ -359,7 +380,7 @@ interface ViewMealItemCardProps {
   item: MealItem;
 }
 
-function ViewMealItemCard({ item }: ViewMealItemCardProps) {
+const ViewMealItemCard = memo(function ViewMealItemCard({ item }: ViewMealItemCardProps) {
   const { t } = useI18n();
   const [showDetailed, setShowDetailed] = useState(false);
 
@@ -480,7 +501,7 @@ function ViewMealItemCard({ item }: ViewMealItemCardProps) {
       )}
     </div>
   );
-}
+});
 
 /**
  * Simple nutrition value display
@@ -491,7 +512,7 @@ interface NutritionValueProps {
   unit: string;
 }
 
-function NutritionValue({ label, value, unit }: NutritionValueProps) {
+const NutritionValue = memo(function NutritionValue({ label, value, unit }: NutritionValueProps) {
   return (
     <div className="text-center">
       <p className="text-xs text-gray-500">{label}</p>
@@ -500,6 +521,6 @@ function NutritionValue({ label, value, unit }: NutritionValueProps) {
       </p>
     </div>
   );
-}
+});
 
 export default MealDetailModal;

@@ -9,7 +9,7 @@
  * Supports expandable detailed nutrition view.
  */
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { useI18n } from '@/lib/i18n';
 import type { MealItem } from '@/types/sync';
 
@@ -117,13 +117,15 @@ export function TotalNutritionSummary({ items }: TotalNutritionSummaryProps) {
         type="button"
         onClick={() => setShowDetailed(!showDetailed)}
         className="mt-3 w-full text-center text-xs text-blue-600 hover:text-blue-800"
+        aria-expanded={showDetailed}
+        aria-controls="detailed-nutrition-panel"
       >
         {showDetailed ? '▲ 收合詳細營養' : '▼ 展開詳細營養'}
       </button>
 
       {/* Detailed nutrition - expandable */}
       {showDetailed && (
-        <div className="mt-3 space-y-3 border-t border-blue-200 pt-3">
+        <div id="detailed-nutrition-panel" className="mt-3 space-y-3 border-t border-blue-200 pt-3">
           {/* Extended macronutrients */}
           <div>
             <p className="mb-2 text-xs font-medium text-gray-600">
@@ -218,7 +220,7 @@ interface MacroFieldProps {
   color: string;
 }
 
-function MacroField({ label, value, unit, color }: MacroFieldProps) {
+const MacroField = memo(function MacroField({ label, value, unit, color }: MacroFieldProps) {
   return (
     <div className="rounded-lg bg-white p-2 text-center">
       <p className="text-xs text-gray-500">{label}</p>
@@ -228,7 +230,7 @@ function MacroField({ label, value, unit, color }: MacroFieldProps) {
       </p>
     </div>
   );
-}
+});
 
 /**
  * Detail nutrition field for expanded view.
@@ -240,7 +242,7 @@ interface DetailFieldProps {
   decimal?: boolean;
 }
 
-function DetailField({ label, value, unit, decimal = false }: DetailFieldProps) {
+const DetailField = memo(function DetailField({ label, value, unit, decimal = false }: DetailFieldProps) {
   const displayValue = decimal ? Math.round(value * 10) / 10 : Math.round(value);
   return (
     <div className="rounded bg-white p-1.5 text-center">
@@ -251,6 +253,6 @@ function DetailField({ label, value, unit, decimal = false }: DetailFieldProps) 
       </p>
     </div>
   );
-}
+});
 
 export default TotalNutritionSummary;

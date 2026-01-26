@@ -8,6 +8,7 @@
  */
 
 import { useRef, useState, useCallback, useEffect } from 'react';
+import Image from 'next/image';
 import { compressImage, formatFileSize } from '@/lib/utils/image-compression';
 import { useI18n } from '@/lib/i18n';
 
@@ -127,11 +128,13 @@ export default function CameraCapture({
       />
 
       {preview ? (
-        <div className="relative">
-          <img
+        <div className="relative h-80 w-full">
+          <Image
             src={preview}
             alt={t('camera.previewAlt')}
-            className="w-full max-h-80 object-contain rounded-2xl"
+            fill
+            className="object-contain rounded-2xl"
+            unoptimized
           />
           <button
             type="button"

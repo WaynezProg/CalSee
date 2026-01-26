@@ -12,6 +12,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
+import Image from 'next/image';
 import AppLayout from '@/app/components/layout/AppLayout';
 import SignInButton from '@/app/components/auth/SignInButton';
 import { useI18n } from '@/lib/i18n';
@@ -128,10 +129,13 @@ export default function SettingsPage() {
             ) : session?.user ? (
               <div className="flex items-center gap-4">
                 {session.user.image ? (
-                  <img
+                  <Image
                     src={session.user.image}
                     alt={session.user.name || ''}
-                    className="w-12 h-12 rounded-full"
+                    width={48}
+                    height={48}
+                    className="rounded-full"
+                    unoptimized
                   />
                 ) : (
                   <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">

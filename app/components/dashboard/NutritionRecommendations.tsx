@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { useI18n } from '@/lib/i18n';
 import type { NutritionRecommendation, DeficiencyLevel } from '@/types/weekly-report';
 
@@ -8,7 +9,7 @@ interface NutritionRecommendationsProps {
   hasEnoughData: boolean;
 }
 
-function InsufficientDataState() {
+const InsufficientDataState = memo(function InsufficientDataState() {
   const { t } = useI18n();
 
   return (
@@ -34,9 +35,9 @@ function InsufficientDataState() {
       <p className="text-xs text-slate-500">{t('weeklyReport.recommendations.noDataMessage')}</p>
     </div>
   );
-}
+});
 
-function BalancedNutritionState() {
+const BalancedNutritionState = memo(function BalancedNutritionState() {
   const { t } = useI18n();
 
   return (
@@ -57,7 +58,7 @@ function BalancedNutritionState() {
       <p className="text-xs text-green-600">{t('weeklyReport.recommendations.goodJobMessage')}</p>
     </div>
   );
-}
+});
 
 function getDeficiencyColor(level: DeficiencyLevel): { bg: string; text: string; badge: string } {
   switch (level) {

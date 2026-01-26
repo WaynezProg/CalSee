@@ -14,6 +14,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import AppLayout from '@/app/components/layout/AppLayout';
 import CameraCapture from '@/app/components/camera/CameraCapture';
 import { MultiItemMealForm } from '@/app/components/meals/MultiItemMealForm';
@@ -97,6 +98,7 @@ export default function AddMealPage() {
         startRecognition(blob);
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- startRecognition is stable
     [hasConsent],
   );
 
@@ -271,11 +273,13 @@ export default function AddMealPage() {
               <>
                 {/* Photo Preview */}
                 {photoPreviewUrl && (
-                  <div className="mb-6">
-                    <img
+                  <div className="relative mb-6 h-48 w-full">
+                    <Image
                       src={photoPreviewUrl}
                       alt={t('home.photoAlt')}
-                      className="w-full max-h-48 object-contain rounded-2xl mx-auto"
+                      fill
+                      className="object-contain rounded-2xl"
+                      unoptimized
                     />
                   </div>
                 )}
@@ -315,11 +319,13 @@ export default function AddMealPage() {
 
             {/* Photo Preview */}
             {photoPreviewUrl && (
-              <div className="mb-4">
-                <img
+              <div className="relative mb-4 h-48 w-full">
+                <Image
                   src={photoPreviewUrl}
                   alt={t('home.photoAlt')}
-                  className="w-full max-h-48 object-contain rounded-2xl"
+                  fill
+                  className="object-contain rounded-2xl"
+                  unoptimized
                 />
               </div>
             )}

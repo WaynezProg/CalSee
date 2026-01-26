@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/db/prisma/client';
 import { calculateNutritionTotals } from '@/lib/utils/nutrition-calculator';
+import type { MealItem } from '@/types/sync';
 
 export async function GET(request: NextRequest) {
   const session = await auth();
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
         totalCarbs: totals.totalCarbs,
         totalFat: totals.totalFat,
         items: {
-          create: data.items.map((item: any) => ({
+          create: data.items.map((item: MealItem) => ({
             foodName: item.foodName,
             portionSize: item.portionSize,
             portionUnit: item.portionUnit,
