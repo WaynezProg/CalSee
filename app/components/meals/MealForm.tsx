@@ -83,7 +83,7 @@ export function MealForm() {
       } else {
         setStatus('failed');
       }
-      setStatusMessage('Failed to sync meal. It will retry in the background.');
+      setStatusMessage(t('mealForm.syncFailed'));
     } finally {
       setIsSubmitting(false);
     }

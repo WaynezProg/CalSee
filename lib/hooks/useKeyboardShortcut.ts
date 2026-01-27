@@ -51,7 +51,7 @@ export function useKeyboardShortcut(
       if (ctrlRequired !== ctrlPressed) return;
       if (altRequired !== altPressed) return;
       if (shiftRequired !== shiftPressed) return;
-      if (metaRequired && !metaPressed) return;
+      if (metaRequired !== metaPressed) return;
 
       // Don't trigger if user is typing in an input
       const activeElement = document.activeElement;
@@ -107,7 +107,7 @@ export function useKeyboardShortcuts(
         if (ctrlRequired !== ctrlPressed) return;
         if (altRequired !== altPressed) return;
         if (shiftRequired !== shiftPressed) return;
-        if (metaRequired && !metaPressed) return;
+        if (metaRequired !== metaPressed) return;
 
         const activeElement = document.activeElement;
         const isTyping =
