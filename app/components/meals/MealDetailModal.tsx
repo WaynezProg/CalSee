@@ -8,7 +8,7 @@
  * Reuses MealItemList for editing functionality.
  */
 
-import { useState, useCallback, memo } from 'react';
+import { useState, useCallback, useEffect, memo } from 'react';
 import Image from 'next/image';
 import { useI18n } from '@/lib/i18n';
 import { useModal } from '@/lib/hooks';
@@ -84,7 +84,7 @@ export function MealDetailModal({
 
   const mealTypeLabel = meal.mealType ? t(`mealForm.mealTypeOptions.${meal.mealType}`) : null;
 
-  // Reset state when meal changes
+  // Reset state when meal changes or modal opens
   const resetState = useCallback(() => {
     setIsEditing(false);
     setEditedItems(meal.items);
@@ -93,6 +93,14 @@ export function MealDetailModal({
     setEditedMealType(meal.mealType ?? resolveDefaultMealType(new Date(meal.timestamp)));
     setError(null);
   }, [meal.items, meal.mealType, meal.timestamp]);
+
+  // Reset state when meal prop changes or modal opens with a different meal
+  // This ensures stale data from a previous meal doesn't persist
+  useEffect(() => {
+    if (isOpen) {
+      resetState();
+    }
+  }, [isOpen, meal.id, resetState]);
 
   const handleStartEdit = () => {
     setEditedItems([...meal.items]);
